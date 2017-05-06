@@ -33,8 +33,6 @@ namespace Pidilite
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmMaster));
             this.pnlMain = new System.Windows.Forms.Panel();
-            this.pnlUserProfile = new System.Windows.Forms.Panel();
-            this.lblUserName = new System.Windows.Forms.Label();
             this.pnlData = new System.Windows.Forms.Panel();
             this.flPnlData = new System.Windows.Forms.FlowLayoutPanel();
             this.pnlBreadCrumb = new System.Windows.Forms.Panel();
@@ -46,14 +44,15 @@ namespace Pidilite
             this.pbCornorLogo = new System.Windows.Forms.PictureBox();
             this.pnlTop = new System.Windows.Forms.Panel();
             this.pnlCentre = new System.Windows.Forms.Panel();
+            this.lblUserName = new System.Windows.Forms.Label();
             this.pbAvatar = new Pidilite.CirclePictureBox();
             this.pnlMain.SuspendLayout();
-            this.pnlUserProfile.SuspendLayout();
             this.pnlData.SuspendLayout();
             this.pnlBreadCrumb.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbBreadCrumb)).BeginInit();
             this.pnlLogo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbCornorLogo)).BeginInit();
+            this.pnlCentre.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbAvatar)).BeginInit();
             this.SuspendLayout();
             // 
@@ -62,7 +61,6 @@ namespace Pidilite
             this.pnlMain.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.pnlMain.Controls.Add(this.pnlUserProfile);
             this.pnlMain.Controls.Add(this.pnlData);
             this.pnlMain.Controls.Add(this.pnlMainMenu);
             this.pnlMain.Controls.Add(this.pnlLogo);
@@ -73,30 +71,6 @@ namespace Pidilite
             this.pnlMain.Name = "pnlMain";
             this.pnlMain.Size = new System.Drawing.Size(1124, 660);
             this.pnlMain.TabIndex = 0;
-            // 
-            // pnlUserProfile
-            // 
-            this.pnlUserProfile.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.pnlUserProfile.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(17)))), ((int)(((byte)(69)))), ((int)(((byte)(117)))));
-            this.pnlUserProfile.Controls.Add(this.pbAvatar);
-            this.pnlUserProfile.Controls.Add(this.lblUserName);
-            this.pnlUserProfile.Location = new System.Drawing.Point(847, 25);
-            this.pnlUserProfile.Name = "pnlUserProfile";
-            this.pnlUserProfile.Size = new System.Drawing.Size(276, 76);
-            this.pnlUserProfile.TabIndex = 17;
-            // 
-            // lblUserName
-            // 
-            this.lblUserName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblUserName.AutoSize = true;
-            this.lblUserName.Font = new System.Drawing.Font("Calibri", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblUserName.Location = new System.Drawing.Point(122, 56);
-            this.lblUserName.Name = "lblUserName";
-            this.lblUserName.Size = new System.Drawing.Size(78, 15);
-            this.lblUserName.TabIndex = 6;
-            this.lblUserName.Text = "lblUserName";
-            this.lblUserName.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // pnlData
             // 
@@ -211,16 +185,30 @@ namespace Pidilite
             this.pnlCentre.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pnlCentre.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(17)))), ((int)(((byte)(69)))), ((int)(((byte)(117)))));
+            this.pnlCentre.Controls.Add(this.lblUserName);
+            this.pnlCentre.Controls.Add(this.pbAvatar);
             this.pnlCentre.Location = new System.Drawing.Point(200, 25);
             this.pnlCentre.Name = "pnlCentre";
-            this.pnlCentre.Size = new System.Drawing.Size(647, 76);
+            this.pnlCentre.Size = new System.Drawing.Size(922, 76);
             this.pnlCentre.TabIndex = 16;
+            // 
+            // lblUserName
+            // 
+            this.lblUserName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblUserName.AutoSize = true;
+            this.lblUserName.Font = new System.Drawing.Font("Calibri", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblUserName.Location = new System.Drawing.Point(760, 52);
+            this.lblUserName.Name = "lblUserName";
+            this.lblUserName.Size = new System.Drawing.Size(78, 15);
+            this.lblUserName.TabIndex = 6;
+            this.lblUserName.Text = "lblUserName";
+            this.lblUserName.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // pbAvatar
             // 
             this.pbAvatar.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.pbAvatar.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.pbAvatar.Location = new System.Drawing.Point(181, 5);
+            this.pbAvatar.Location = new System.Drawing.Point(842, 3);
             this.pbAvatar.Name = "pbAvatar";
             this.pbAvatar.Size = new System.Drawing.Size(68, 67);
             this.pbAvatar.TabIndex = 5;
@@ -240,14 +228,14 @@ namespace Pidilite
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.Load += new System.EventHandler(this.frmMaster_Load);
             this.pnlMain.ResumeLayout(false);
-            this.pnlUserProfile.ResumeLayout(false);
-            this.pnlUserProfile.PerformLayout();
             this.pnlData.ResumeLayout(false);
             this.pnlBreadCrumb.ResumeLayout(false);
             this.pnlBreadCrumb.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbBreadCrumb)).EndInit();
             this.pnlLogo.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pbCornorLogo)).EndInit();
+            this.pnlCentre.ResumeLayout(false);
+            this.pnlCentre.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbAvatar)).EndInit();
             this.ResumeLayout(false);
 
@@ -261,8 +249,7 @@ namespace Pidilite
         private System.Windows.Forms.Panel pnlCentre;
         private System.Windows.Forms.PictureBox pbCornorLogo;
         private System.Windows.Forms.FlowLayoutPanel  pnlMainMenu;
-      //private System.Windows.Forms.Panel pnlRight;
-    
+      //private System.Windows.Forms.Panel pnlRight;    
       //  private System.Windows.Forms.PictureBox pbRestore;
       //  private System.Windows.Forms.Label lblClose;
        // private System.Windows.Forms.PictureBox pbMinimize;
@@ -271,7 +258,6 @@ namespace Pidilite
         private System.Windows.Forms.Label lblBreadCrumb;
         private System.Windows.Forms.PictureBox pbBreadCrumb;
         private FlowLayoutPanel flPnlData;
-        private Panel pnlUserProfile;
         public CirclePictureBox pbAvatar;
         public Label lblUserName;
         private Label lblSignOut;

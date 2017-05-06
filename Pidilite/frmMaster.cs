@@ -25,9 +25,9 @@ namespace Pidilite
         {
             InitializeComponent();
             lblUserName.Text = userName;
-            lblUserName.RightToLeft = System.Windows.Forms.RightToLeft.Yes; 
+            lblUserName.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             pbAvatar.Image = userImage;
-            pbAvatar.BackColor = pnlUserProfile.BackColor;
+            pbAvatar.BackColor = pnlCentre.BackColor;
             opPreparemenu();
         }
 
@@ -37,14 +37,14 @@ namespace Pidilite
             Application.DoEvents();
             //    this.FormBorderStyle = FormBorderStyle.None;
             Left = Top = 0;
-            MaximizedBounds = Screen.FromHandle(this.Handle).WorkingArea;
+            MaximizedBounds = Screen.FromHandle(Handle).WorkingArea;
             WindowState = FormWindowState.Maximized;
 
 
         }
         private void lblClose_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
         private void pbRestore_Click(object sender, EventArgs e)
         {
@@ -54,9 +54,9 @@ namespace Pidilite
                 WindowState = FormWindowState.Normal;
                 int boundWidth = Screen.PrimaryScreen.Bounds.Width;
                 int boundHeight = Screen.PrimaryScreen.Bounds.Height;
-                int x = boundWidth - this.Width;
-                int y = boundHeight - this.Height;
-                this.Location = new Point(x / 2, y / 2);
+                int x = boundWidth - Width;
+                int y = boundHeight - Height;
+                Location = new Point(x / 2, y / 2);
                 pb.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.WindowMaximize)
                 { ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(222)))), ((int)(((byte)(222))))), Size = 12 });
             }
@@ -71,10 +71,10 @@ namespace Pidilite
         private void pbMinimize_Click(object sender, EventArgs e)
         {
 
-            this.WindowState = FormWindowState.Minimized;
+            WindowState = FormWindowState.Minimized;
 
         }
-        public List<menuDetails> opGetMenubyParentId(Int16 parentId)
+        public List<menuDetails> opGetMenubyParentId(short parentId)
 
         {
             List<menuDetails> oReturn = new List<Pidilite.menuDetails>();
@@ -172,9 +172,9 @@ namespace Pidilite
                 btnMenu.FlatStyle = FlatStyle.Flat;
                 btnMenu.Text = "  " + omenu.name;
                 btnMenu.Margin = new Padding(0);
-                btnMenu.Click += new System.EventHandler(this.btnMenu_Click);
-                btnMenu.MouseEnter += new System.EventHandler(this.btnMenu_MouseEnter);
-                btnMenu.MouseLeave += new System.EventHandler(this.btnMenu_MouseLeave);
+                btnMenu.Click += new System.EventHandler(btnMenu_Click);
+                btnMenu.MouseEnter += new System.EventHandler(btnMenu_MouseEnter);
+                btnMenu.MouseLeave += new System.EventHandler(btnMenu_MouseLeave);
                 PictureBox pb = new PictureBox();
                 pb.Width = 42;
                 pb.BackColor = pnlMainMenu.BackColor;
@@ -348,7 +348,7 @@ namespace Pidilite
                 btnSubMenu.Name = sub.id.ToString();
                 btnSubMenu.FlatStyle = FlatStyle.Flat;
                 btnSubMenu.Text = sub.name;
-                btnSubMenu.Click += new System.EventHandler(this.btnSubMenu_Click);
+                btnSubMenu.Click += new System.EventHandler(btnSubMenu_Click);
                 pnlMenu.Controls.Add(btnSubMenu);
 
             }
@@ -402,8 +402,8 @@ namespace Pidilite
                 picBoxView.Anchor = AnchorStyles.None;
                 pnlBox.Tag = sub.moduleId;
                 picBoxView.Tag = sub.moduleId;
-                pnlBox.Click += new System.EventHandler(this.pnlBox_Click);
-                picBoxView.Click += new System.EventHandler(this.picBoxView_Click);
+                pnlBox.Click += new System.EventHandler(pnlBox_Click);
+                picBoxView.Click += new System.EventHandler(picBoxView_Click);
                 pnlBox.Controls.Add(picBoxView);
                 if (sub.logoClass != "")
                 {
@@ -449,74 +449,79 @@ namespace Pidilite
                 }
             }
             var pb = (PictureBox)sender;
-            moduleValues oValues = new moduleValues ();
+            moduleValues oValues = new moduleValues();
             oValues = opGetModuleDetailsByID(Convert.ToInt16(pb.Tag), false);
-            lblBreadCrumb.Text= oValues.Title ;
+            lblBreadCrumb.Text = oValues.Title;
             lblBreadCrumb.Font = RegistryConfig.myBCFont;
             lblBreadCrumb.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
-            FlowLayoutPanel oPnlSearch = new FlowLayoutPanel();
-            oPnlSearch.Width = 970;
-            oPnlSearch.Height = pnlBreadCrumb.Height;
-            oPnlSearch.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            ComboBox cmbSearch = new ComboBox();
-           
-            cmbSearch.Width = 130;
-            cmbSearch.Font = RegistryConfig.myFont;
-            string [] searchFields = (JsonConvert.DeserializeObject<List<girdDetails>>(oValues.Grid)).Where(q => q.view == true && q.label !="").Select(q => q.label).ToArray();
-            if (searchFields.Length > 0)
+            Panel oPanel = new Panel();
+            oPanel.Width = pnlBreadCrumb.Width - 40;
+            oPanel.Height = pnlBreadCrumb.Height + 20;
+            oPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            flPnlData.Controls.Add(oPanel);
+            List<girdDetails> girdDetails = opCreatingSearchPanel(oValues, oPanel);
+            opCreatingActionPanel(pb, oPanel);
+            opConstructingGrid(oValues, oPanel, girdDetails);
+        }
+
+        private void opConstructingGrid(moduleValues oValues, Panel oPanel, List<girdDetails> girdDetails)
+        {
+            string columnBuild = "Select ";
+
+            foreach (var obj in girdDetails)
             {
-                
-                cmbSearch.Items.Add("Sort");
-                for (int i = 0; i < searchFields.Length; i++)
+
+                if (obj.view == true)
                 {
-                      cmbSearch.Items.Add(searchFields[i]);
+                    if (Convert.ToString(obj.conn["valid"]) == "0")
+                    {
+                        if (Convert.ToBoolean(obj.attribute["image"]["active"]) == false)
+                            columnBuild = columnBuild + Convert.ToString(obj.field) + " as '" + Convert.ToString(obj.label) + "', ";
+                    }
+                    else
+                    {
+                        columnBuild = columnBuild + "(Isnull((select " + Convert.ToString(obj.conn["display"]) + " from " + Convert.ToString(obj.conn["db"]) + " where " + Convert.ToString(obj.conn["key"]) + " = " + Convert.ToString(obj.field) + "),'')) as '" + Convert.ToString(obj.label) + "', ";
+                    }
                 }
             }
-            cmbSearch.SelectedText = "Sort";
-            ComboBox cmbOrder = new ComboBox();
-           
-            cmbOrder.Width = 70;
-            cmbOrder.Font = RegistryConfig.myFont;
-            cmbOrder.Items.Add("Order");
-            cmbOrder.Items.Add("Desc");
-            cmbOrder.Items.Add("Asc");
-            cmbOrder.SelectedText = "Order";
-            flPnlData.Controls.Add(oPnlSearch);
-            oPnlSearch.Controls.Add(cmbSearch);       
-            oPnlSearch.Controls.Add(cmbOrder);           
-            Button btnGo = new Button();
-            btnGo.Width = 43;
-            btnGo.Height = 26;
-            btnGo.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(3)))), ((int)(((byte)(101)))), ((int)(((byte)(192)))));
-            btnGo.ForeColor = Color.White;
-            btnGo.Font = new System.Drawing.Font("Calibri", 12.00F, System.Drawing.FontStyle.Bold);
-            btnGo.Name = "btnGo";
-            btnGo.Text = "Go";
-            btnGo.FlatAppearance.BorderSize = 0;
-            btnGo.FlatStyle = FlatStyle.Flat;
-            oPnlSearch.Controls.Add(btnGo);
-            Button btnReset = new Button();
-            btnReset.Name = "btnReset";
-            btnReset.Height = 26;
-            btnReset.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(3)))), ((int)(((byte)(101)))), ((int)(((byte)(192)))));
-            btnReset.ForeColor = Color.White;
-            btnReset.Font = new System.Drawing.Font("Calibri",12.00F, System.Drawing.FontStyle.Bold);
-            btnReset.Text = " Reset";
-            btnReset.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Refresh)
-            { ForeColor = System.Drawing.Color.White, Size = 16 });
-            btnReset.FlatAppearance.BorderSize = 0;
-            btnReset.FlatStyle = FlatStyle.Flat;
-            btnReset.ImageAlign = ContentAlignment.TopCenter;
-            btnReset.TextAlign = ContentAlignment.MiddleCenter ;
-            btnReset.TextImageRelation = TextImageRelation.ImageBeforeText;
-            btnReset.Click  += new System.EventHandler(this.btnReset_Click);
-            oPnlSearch.Controls.Add(btnReset);
+            columnBuild = columnBuild.TrimEnd(',', ' ');
+            columnBuild = columnBuild.TrimStart(',', ' '); ;
+            columnBuild = columnBuild + " from " + Convert.ToString(oValues.TableName);
+            Panel oPnlGrid = new Panel();
+            oPnlGrid.Width = oPanel.Width;
+            oPnlGrid.Height = 610;
+            flPnlData.Controls.Add(oPnlGrid);
+            DataTable dt = new DataTable();
+            dt = opGridDataByModule(columnBuild);
+            DataGridView oDataGrid = new DataGridView();
+            oDataGrid.Height = oPnlGrid.Height - 20;
+            oDataGrid.Width = oPnlGrid.Width;
+            oDataGrid.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            oPnlGrid.Controls.Add(oDataGrid);
+            oDataGrid.DataSource = dt;
+            //Add a CheckBox Column to the DataGridView at the first position.
+            DataGridViewCheckBoxColumn checkBoxColumn = new DataGridViewCheckBoxColumn();
+            checkBoxColumn.HeaderText = "";
+            checkBoxColumn.Name = "checkBoxColumn";
+            oDataGrid.Columns.Insert(0, checkBoxColumn);
+            oDataGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            checkBoxColumn.Width = 60;
+            oDataGrid.EnableHeadersVisualStyles = true;
+            oDataGrid.ColumnHeadersHeight = 40;
+            oDataGrid.CellBorderStyle = DataGridViewCellBorderStyle.None;
+        }
+
+        private void opCreatingActionPanel(PictureBox pb, Panel oPanel)
+        {
             FlowLayoutPanel oPnlAction = new FlowLayoutPanel();
-           oPnlAction.Margin = new System.Windows.Forms.Padding(10, 3, 0, 0);
-            oPnlAction.Width = 210;
+            //  oPnlAction.Margin = new Padding(250, 3, 10, 3);
+            oPnlAction.Dock = DockStyle.Right;
+            oPnlAction.Width = 230;
+            oPnlAction.AutoSize = false;
             oPnlAction.Height = pnlBreadCrumb.Height;
-            oPnlAction.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            flPnlData.Controls.Add(oPnlAction);
+            oPnlAction.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right )));
+           oPnlAction.Location = new System.Drawing.Point(1000, 5); ;
+            oPanel.Controls.Add(oPnlAction);
             Button btnSearch = new Button();
             btnSearch.Name = "btnSearch";
             btnSearch.Height = 26;
@@ -527,8 +532,8 @@ namespace Pidilite
             btnSearch.FlatAppearance.BorderSize = 0;
             btnSearch.FlatStyle = FlatStyle.Flat;
             btnSearch.ImageAlign = ContentAlignment.TopCenter;
-           btnSearch.Margin = new System.Windows.Forms.Padding(10, 3, 0, 0); ;
-            btnSearch.Click += new System.EventHandler(this.btnSearch_Click);            
+            btnSearch.Margin = new System.Windows.Forms.Padding(10, 3, 0, 0);
+            btnSearch.Click += new System.EventHandler(btnSearch_Click);
             ToolTip toolTip1 = new ToolTip();
             toolTip1.AutoPopDelay = 3000;
             toolTip1.InitialDelay = 500;
@@ -546,10 +551,9 @@ namespace Pidilite
             btnDownLoad.FlatAppearance.BorderSize = 0;
             btnDownLoad.FlatStyle = FlatStyle.Flat;
             btnDownLoad.ImageAlign = ContentAlignment.TopCenter;
-           btnDownLoad.Margin = new System.Windows.Forms.Padding(10, 3, 0, 0); ;
-
-            btnDownLoad.Click += new System.EventHandler(this.btnDownLoad_Click);
-            ToolTip toolTip2= new ToolTip();
+            btnDownLoad.Margin = new System.Windows.Forms.Padding(10, 3, 0, 0);
+            btnDownLoad.Click += new System.EventHandler(btnDownLoad_Click);
+            ToolTip toolTip2 = new ToolTip();
             toolTip2.AutoPopDelay = 3000;
             toolTip2.InitialDelay = 500;
             toolTip2.ReshowDelay = 500;
@@ -557,7 +561,7 @@ namespace Pidilite
             toolTip2.SetToolTip(btnDownLoad, "Download");
             oPnlAction.Controls.Add(btnDownLoad);
             Button btnDelete = new Button();
-            btnDelete.Margin = new System.Windows.Forms.Padding(10, 3, 0, 0); ;
+            btnDelete.Margin = new System.Windows.Forms.Padding(10, 3, 0, 0);
             btnDelete.Name = "btnDelete";
             btnDelete.Height = 26;
             btnDelete.Width = 40;
@@ -567,8 +571,7 @@ namespace Pidilite
             btnDelete.FlatAppearance.BorderSize = 0;
             btnDelete.FlatStyle = FlatStyle.Flat;
             btnDelete.ImageAlign = ContentAlignment.TopCenter;
-
-            btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
+            btnDelete.Click += new System.EventHandler(btnDelete_Click);
             ToolTip toolTip3 = new ToolTip();
             toolTip3.AutoPopDelay = 3000;
             toolTip3.InitialDelay = 500;
@@ -586,8 +589,9 @@ namespace Pidilite
             btnCreate.FlatAppearance.BorderSize = 0;
             btnCreate.FlatStyle = FlatStyle.Flat;
             btnCreate.ImageAlign = ContentAlignment.TopCenter;
-            btnCreate.Margin = new System.Windows.Forms.Padding(10, 3, 0,0);
-            btnCreate.Click += new System.EventHandler(this.btnCreate_Click);
+            btnCreate.Tag = pb.Tag;
+            btnCreate.Margin = new System.Windows.Forms.Padding(10, 3, 0, 0);
+            btnCreate.Click += new System.EventHandler(btnCreate_Click);
             ToolTip toolTip4 = new ToolTip();
             toolTip4.AutoPopDelay = 3000;
             toolTip4.InitialDelay = 500;
@@ -595,13 +599,72 @@ namespace Pidilite
             toolTip4.ShowAlways = true;
             toolTip4.SetToolTip(btnCreate, "Create");
             oPnlAction.Controls.Add(btnCreate);
-            DataGridView oDataGrid = new DataGridView();
-
-            
-            
         }
 
-        public DataTable opGridDataByModule(int ModuleId)
+        private List<girdDetails> opCreatingSearchPanel(moduleValues oValues, Panel oPanel)
+        {
+            FlowLayoutPanel oPnlSearch = new FlowLayoutPanel();
+            oPnlSearch.Width = 350;
+            oPnlSearch.Height = pnlBreadCrumb.Height;
+            oPnlSearch.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            oPnlSearch.Dock = DockStyle.None;
+            ComboBox cmbSearch = new ComboBox();
+            cmbSearch.Width = 130;
+            cmbSearch.Font = RegistryConfig.myFont;
+            List<girdDetails> girdDetails = new List<girdDetails>();
+            girdDetails = JsonConvert.DeserializeObject<List<girdDetails>>(oValues.Grid);
+            string[] searchFields = girdDetails.Where(q => q.view == true && q.label != "").Select(q => q.label).ToArray();
+            if (searchFields.Length > 0)
+            {
+
+                cmbSearch.Items.Add("Sort");
+                for (int i = 0; i < searchFields.Length; i++)
+                {
+                    cmbSearch.Items.Add(searchFields[i]);
+                }
+            }
+            cmbSearch.SelectedText = "Sort";
+            ComboBox cmbOrder = new ComboBox();
+            cmbOrder.Width = 70;
+            cmbOrder.Font = RegistryConfig.myFont;
+            cmbOrder.Items.Add("Order");
+            cmbOrder.Items.Add("Desc");
+            cmbOrder.Items.Add("Asc");
+            cmbOrder.SelectedText = "Order";
+            oPanel.Controls.Add(oPnlSearch);
+            oPnlSearch.Controls.Add(cmbSearch);
+            oPnlSearch.Controls.Add(cmbOrder);
+            Button btnGo = new Button();
+            btnGo.Width = 43;
+            btnGo.Height = 26;
+            btnGo.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(3)))), ((int)(((byte)(101)))), ((int)(((byte)(192)))));
+            btnGo.ForeColor = Color.White;
+            btnGo.Font = new System.Drawing.Font("Calibri", 12.00F, System.Drawing.FontStyle.Bold);
+            btnGo.Name = "btnGo";
+            btnGo.Text = "Go";
+            btnGo.FlatAppearance.BorderSize = 0;
+            btnGo.FlatStyle = FlatStyle.Flat;
+            oPnlSearch.Controls.Add(btnGo);
+            Button btnReset = new Button();
+            btnReset.Name = "btnReset";
+            btnReset.Height = 26;
+            btnReset.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(3)))), ((int)(((byte)(101)))), ((int)(((byte)(192)))));
+            btnReset.ForeColor = Color.White;
+            btnReset.Font = new System.Drawing.Font("Calibri", 12.00F, System.Drawing.FontStyle.Bold);
+            btnReset.Text = " Reset";
+            btnReset.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Refresh)
+            { ForeColor = System.Drawing.Color.White, Size = 16 });
+            btnReset.FlatAppearance.BorderSize = 0;
+            btnReset.FlatStyle = FlatStyle.Flat;
+            btnReset.ImageAlign = ContentAlignment.TopCenter;
+            btnReset.TextAlign = ContentAlignment.MiddleCenter;
+            btnReset.TextImageRelation = TextImageRelation.ImageBeforeText;
+            btnReset.Click += new System.EventHandler(btnReset_Click);
+            oPnlSearch.Controls.Add(btnReset);
+            return girdDetails;
+        }
+
+        public DataTable opGridDataByModule(string queryString)
         {
             DataTable oGridData = new DataTable();
             RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
@@ -610,11 +673,10 @@ namespace Pidilite
                 con.Open();
                 using (SqlCommand cmd = con.CreateCommand())
                 {
-                    cmd.CommandText = "usp_GetGridDataByModule";
+                    cmd.CommandText = queryString;
                     SqlDataAdapter sqlda = new SqlDataAdapter();
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@ModuleId", ModuleId);
-                    cmd.ExecuteNonQuery();
+                    cmd.CommandType = CommandType.Text;
+
                     sqlda = new SqlDataAdapter(cmd);
                     sqlda.Fill(oGridData);
                 }
@@ -623,7 +685,10 @@ namespace Pidilite
         }
         private void btnCreate_Click(object sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            var btn = (Button)sender;
+            moduleValues oModuleValues = new moduleValues();
+            oModuleValues = opGetModuleDetailsByID(Convert.ToInt16(btn.Tag), true);
+
         }
         private void btnDelete_Click(object sender, EventArgs e)
         {
@@ -644,10 +709,10 @@ namespace Pidilite
             {
 
                 List<ComboBox> items = new List<ComboBox>();
-                foreach (ComboBox cmb in btnReset.Parent.Controls.OfType<ComboBox >())
+                foreach (ComboBox cmb in btnReset.Parent.Controls.OfType<ComboBox>())
                 {
                     cmb.SelectedIndex = 0;
-                }                
+                }
             }
         }
         private void pnlBox_Click(object sender, EventArgs e)
@@ -662,8 +727,8 @@ namespace Pidilite
         {
             if (e.Button == MouseButtons.Left)
             {
-                this.Left += e.X - lastPoint.X;
-                this.Top += e.Y - lastPoint.Y;
+                Left += e.X - lastPoint.X;
+                Top += e.Y - lastPoint.Y;
             }
         }
         private void CenterPictureBox(PictureBox picBox, Bitmap picImage)
@@ -686,19 +751,19 @@ namespace Pidilite
                     cmd.CommandText = "usp_GetModuleDetailsByID";
                     cmd.CommandType = CommandType.StoredProcedure;
                     SqlDataAdapter sqlda = new SqlDataAdapter();
-                   
+
                     cmd.Parameters.AddWithValue("@IsForm", isForm);
                     cmd.Parameters.AddWithValue("@ModuleId", moduleId);
                     SqlDataReader dr = cmd.ExecuteReader();
                     if (dr.HasRows)
                     {
-                        oValues  = new moduleValues();
+                        oValues = new moduleValues();
                         while (dr.Read())
                         {
-                            oValues.Title  = Convert.ToString(dr[0]);
+                            oValues.Title = Convert.ToString(dr[0]);
                             oValues.Form = Convert.ToString(dr[1]);
                             oValues.Grid = Convert.ToString(dr[2]);
-
+                            oValues.TableName = Convert.ToString(dr[3]);
                         }
                     }
                     dr.Close();
@@ -707,21 +772,21 @@ namespace Pidilite
             return oValues;
         }
 
-        
+
     }
     public class menuDetails
     {
 
-        public Int32 id { get; set; }
+        public int id { get; set; }
         public string name { get; set; }
         public string logoClass { get; set; }
         public string logo { get; set; }
         public string backgroundColor { get; set; }
-        public Int32 parentId { get; set; }
+        public int parentId { get; set; }
         public string moduleName { get; set; }
-        public Int32 moduleId { get; set; }
+        public int moduleId { get; set; }
         public string position { get; set; }
-        public Int32 ordering { get; set; }
+        public int ordering { get; set; }
 
     }
 
@@ -730,6 +795,7 @@ namespace Pidilite
         public string Title { get; set; }
         public string Form { get; set; }
         public string Grid { get; set; }
+        public string TableName { get; set; }
     }
 
     public class girdDetails
@@ -756,5 +822,32 @@ namespace Pidilite
         public JObject conn { get; set; }
         public JObject attribute { get; set; }
         public string type { get; set; }
+    }
+
+
+    public class formDetails
+    {
+        public string field { get; set; }
+        public string alias { get; set; }
+        public string language { get; set; }
+        public string label { get; set; }
+        public string form_group { get; set; }
+        public string required { get; set; }
+        public string duplicate { get; set; }
+        public string tabOrder { get; set; }
+        public string fAlign { get; set; }
+        public string fieldWidth { get; set; }
+        public string view { get; set; }
+        public string viewmobile { get; set; }
+        public string type { get; set; }
+        public short add { get; set; }
+        public string size { get; set; }
+        public short edit { get; set; }
+        public short search { get; set; }
+        //public Int16 readOnly {get;set;}
+        public string access_server { get; set; }
+        public short sortlist { get; set; }
+        public string limited { get; set; }
+        public JObject option { get; set; }
     }
 }
