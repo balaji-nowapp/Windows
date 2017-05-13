@@ -322,7 +322,7 @@ namespace Pidilite
                         }
                         catch (Exception ex)
                         {
-
+                            Log.LogData("Error in Table Creation: " + ex.Message + ex.StackTrace, Log.Status.Error);
                         }
                     }
                 }
@@ -346,7 +346,7 @@ namespace Pidilite
             }
             catch (Exception ex)
             {
-
+                Log.LogData("Error in Creating Store Procedures: " + ex.Message + ex.StackTrace, Log.Status.Error);
             }
 
         }
@@ -633,7 +633,7 @@ namespace Pidilite
             }
             catch (Exception ex)
             {
-
+                Log.LogData("Error in Getting Dashboard Menus: " + ex.Message + ex.StackTrace, Log.Status.Error);
             }
 
 
@@ -738,7 +738,7 @@ namespace Pidilite
             }
             catch (Exception ex)
             {
-
+                Log.LogData("Error in Getting Module Deatils: " + ex.Message + ex.StackTrace, Log.Status.Error);
             }
             return oModuleDetails;
         }

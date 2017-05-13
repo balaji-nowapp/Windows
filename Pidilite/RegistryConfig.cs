@@ -17,7 +17,7 @@ namespace Pidilite
         private static extern IntPtr AddFontMemResourceEx(IntPtr pbFont, uint cbFont,
         IntPtr pdv, [System.Runtime.InteropServices.In] ref uint pcFonts);
         public static  PrivateFontCollection pfc = new PrivateFontCollection();
-        public static Font myFont, myFontBold,myBCFont ;
+        public static Font myFont, myFontBold,myBCFont,myHeaderFont ;
 
          static RegistryConfig ()
             {
@@ -29,7 +29,7 @@ namespace Pidilite
             AddFontMemResourceEx(fontPtr, (uint)Properties.Resources.OpenSans_Light.Length, IntPtr.Zero, ref dummy);
             System.Runtime.InteropServices.Marshal.FreeCoTaskMem(fontPtr);
             myFont = new Font(pfc.Families[0], 9.0F);
-           
+            myHeaderFont = new Font(pfc.Families[0], 12.0F);
 
             byte[] fontData1 = Properties.Resources.OpenSans_Bold;
             IntPtr fontPtr1 = System.Runtime.InteropServices.Marshal.AllocCoTaskMem(fontData1.Length);
@@ -41,7 +41,7 @@ namespace Pidilite
             myFontBold = new Font(pfc.Families[0], 9.0F);
             myBCFont = new Font(pfc.Families[0], 13.0F);
 
-
+        
         }
 
         public static string registryName = @"SOFTWARE\Pidilite\PidiliteConfig";
@@ -66,6 +66,7 @@ namespace Pidilite
                 catch (Exception ex)
                 {
                     isRegEmpty = true;
+                    Log.LogData("Error in Loading Registry Values: " + ex.Message + ex.StackTrace, Log.Status.Error);
                 }
             }
             else

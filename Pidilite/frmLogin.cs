@@ -181,7 +181,7 @@ namespace Pidilite
             }
             catch (Exception ex)
             {
-
+                Log.LogData("Error in User Credential Validation: " + ex.Message + ex.StackTrace, Log.Status.Error);
                 isHide = false;
             }
 
@@ -249,7 +249,7 @@ namespace Pidilite
                 }
                 catch (Exception ex)
                 {
-
+                    Log.LogData("Error in User Login Check: " + ex.Message + ex.StackTrace, Log.Status.Error);
                 }
             }
         }
