@@ -28,11 +28,14 @@ namespace Pidilite
         #region[Constructor]
         public frmMaster(string userName, Bitmap userImage)
         {
+            Log.LogData("Form Master", Log.Status.Debug);
             InitializeComponent();
             lblUserName.Text = userName;
             lblUserName.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             pbAvatar.Image = userImage;
             pbAvatar.BackColor = pnlCentre.BackColor;
+            btnModule.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Refresh)
+            { ForeColor = Color.White, Size = 16 });
             opPreparemenu();
         }
         #endregion
@@ -76,7 +79,7 @@ namespace Pidilite
             List<menuDetails> oReturn = new List<menuDetails>();
             try
             {
-                //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
+               //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
                 using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
                 {
                     con.Open();
@@ -495,7 +498,7 @@ namespace Pidilite
         public DataTable opGridDataByModule(string queryString)
         {
             DataTable oGridData = new DataTable();
-            //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
+           //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
             using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
             {
                 con.Open();
@@ -522,7 +525,7 @@ namespace Pidilite
             oPnlAction.AutoSize = false;
             oPnlAction.Height = pnlBreadCrumb.Height;
             oPnlAction.Anchor = (AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right);
-            oPnlAction.Location = new Point(1000, 5); ;
+            oPnlAction.Dock = DockStyle.Right;
             oPanel.Controls.Add(oPnlAction);
             Button btnSearch = new Button();
             btnSearch.Name = "btnSearch";
@@ -692,7 +695,7 @@ namespace Pidilite
         {
             moduleValues oValues = null;
             DataTable dt = new DataTable();
-            //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
+           //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
             using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
             {
                 con.Open();
@@ -701,7 +704,6 @@ namespace Pidilite
                     cmd.CommandText = "usp_GetModuleDetailsByID";
                     cmd.CommandType = CommandType.StoredProcedure;
                     SqlDataAdapter sqlda = new SqlDataAdapter();
-
                     cmd.Parameters.AddWithValue("@IsForm", isForm);
                     cmd.Parameters.AddWithValue("@ModuleId", moduleId);
                     SqlDataReader dr = cmd.ExecuteReader();
@@ -1103,7 +1105,8 @@ namespace Pidilite
             {
                 if (detail.type != "hidden" && detail.type != "formula_hidden" && detail.view == "1")
                 {
-
+                  
+                   lbl = new Label();
                     lbl.Text = detail.label;
                     if (detail.required == "required")
                         lbl.Text = lbl.Text + '*';
@@ -1143,7 +1146,7 @@ namespace Pidilite
             try
             {
 
-                //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
+               //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
                 using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
                 {
                     con.Open();
@@ -1254,6 +1257,13 @@ namespace Pidilite
             oPnlSearch.Controls.Add(btnReset);
             return girdDetails;
         }
+
+        private void btnModule_Click(object sender, EventArgs e)
+        {
+            frmServerDetails oServer = new frmServerDetails(RegistryConfig.database);
+            oServer.opSaveModuleDetails();
+        }
+      
         private void btnReset_Click(object sender, EventArgs e)
         {
             var btnReset = (Button)sender;

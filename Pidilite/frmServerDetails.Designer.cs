@@ -112,7 +112,7 @@
             // 
             this.lblUserName.Anchor = System.Windows.Forms.AnchorStyles.Right;
             this.lblUserName.Font = new System.Drawing.Font("Calibri", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblUserName.Location = new System.Drawing.Point(349, 9);
+            this.lblUserName.Location = new System.Drawing.Point(344, 9);
             this.lblUserName.Name = "lblUserName";
             this.lblUserName.Size = new System.Drawing.Size(51, 15);
             this.lblUserName.TabIndex = 3;
@@ -125,7 +125,7 @@
             this.lblSignOut.Font = new System.Drawing.Font("Calibri", 10.75F, System.Drawing.FontStyle.Bold);
             this.lblSignOut.Image = ((System.Drawing.Image)(resources.GetObject("lblSignOut.Image")));
             this.lblSignOut.ImageAlign = System.Drawing.ContentAlignment.TopLeft;
-            this.lblSignOut.Location = new System.Drawing.Point(346, 24);
+            this.lblSignOut.Location = new System.Drawing.Point(345, 24);
             this.lblSignOut.Name = "lblSignOut";
             this.lblSignOut.Size = new System.Drawing.Size(81, 18);
             this.lblSignOut.TabIndex = 0;
@@ -135,7 +135,7 @@
             // pbAvatar
             // 
             this.pbAvatar.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.pbAvatar.Location = new System.Drawing.Point(335, 3);
+            this.pbAvatar.Location = new System.Drawing.Point(354, 3);
             this.pbAvatar.Name = "pbAvatar";
             this.pbAvatar.Size = new System.Drawing.Size(68, 67);
             this.pbAvatar.TabIndex = 2;

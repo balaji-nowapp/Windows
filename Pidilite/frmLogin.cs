@@ -18,9 +18,7 @@ namespace Pidilite
     {
         public frmLogin()
         {
-
             InitializeComponent();
-
         }
         int second = 0;
         public static string status { get; set; }
@@ -60,16 +58,17 @@ namespace Pidilite
             {
                 userName = txtUserName.Text;
                 userPwd = txtPassword.Text;
-
+                RegistryConfig.UserName = userName;
+                RegistryConfig.Password = userPwd;
                 RegistryConfig.LoadRegValues();
                 if (RegistryConfig.isRegEmpty == true)
                 {
                     userCredentialValidation(userName, userPwd);// validating in central server
-                    frmServerDetails frmServer = new frmServerDetails(FirstName, LastName, DbName);
+                    frmServerDetails frmServer = new frmServerDetails(FirstName, LastName, DbName);                   
                     frmServer.frmReadPNG(Avatar);
                     frmServer.Show();
                     if (isHide == true)
-                        this.Hide();
+                        Hide();
                     else
                     {
                         status = respJson["message"];
@@ -82,12 +81,21 @@ namespace Pidilite
                 }
                 else
                 {
-
-                    //    userLoginCheck(userName, userPwd);
-                    Hide();
                     RegistryConfig.myConn = "Server=" + RegistryConfig.serverName  + ";Integrated security=SSPI;database=" + RegistryConfig.database  + ";User Id= " + RegistryConfig.serverUser  + ";Password =" + RegistryConfig.serverPwd ;
-                    frmMaster oMaster = new frmMaster(FirstName + " " + LastName, userPhoto);
-                    oMaster.Show();
+                    userLoginCheck(userName, userPwd);
+                    if (isHide == true)
+                    {
+                        frmMaster oMaster = new frmMaster(FirstName + " " + LastName, userPhoto);
+                        oMaster.Show();
+                    }
+                    else
+                    {
+                        status = respJson["message"];
+                        timerStatus.Enabled = true;
+                        timerStatus.Interval = 1000; // it will Tick in 1 seconds
+                        timerStatus.Tick += new EventHandler(timerStatus_Tick);
+                        timerStatus.Start();
+                    }                 
 
                 }
             }
@@ -173,6 +181,7 @@ namespace Pidilite
                         else
                         {
                             isHide = false;
+                            status = Convert.ToString(respJson["message"]);
                         }
 
                     }
@@ -216,14 +225,17 @@ namespace Pidilite
                             {
                                 status = "";// Login Success 
                                 userDetails oDetails = new userDetails();
-                              oDetails =  opGetUserDetails(Convert.ToInt64(vOpcode.Value));
+                               oDetails =  opGetUserDetails(Convert.ToInt64(vOpcode.Value));
                                 FirstName = oDetails.FirstName;
                                 LastName = oDetails.LastName;
-                                userPhoto = frmServerDetails.ByteToImage( oDetails.Photo);
-
+                                if (oDetails.Photo != null )
+                                userPhoto =RegistryConfig.ByteToImage( oDetails.Photo);
+                                else
+                                    userPhoto = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.User)
+                                    { ForeColor = SystemColors.ButtonFace, Size = 150 });
                                 frmMaster oMaster = new frmMaster(FirstName+" "+LastName,userPhoto);
-                                
 
+                                isHide = true;
                             }
                             else if (Convert.ToInt64(vOpcode.Value) == -1)
                             {
@@ -239,6 +251,11 @@ namespace Pidilite
                             {
                                 status = "Your username/password combination was incorrect"; // InCorrect Inputs 
                             }
+                            else if (Convert.ToInt64(vOpcode.Value) == -4)
+                            {
+                                Log.LogData("No Wpassword saved for this user", Log.Status.Info); // First Time Login
+                                userCredentialValidation(UserID, Password);
+                            }
                             timerStatus.Enabled = true;
                             timerStatus.Interval = 1000; // it will Tick in 1 seconds
                             timerStatus.Tick += new EventHandler(timerStatus_Tick);
@@ -253,7 +270,6 @@ namespace Pidilite
                 }
             }
         }
-
         public userDetails opGetUserDetails (Int64 UserId)
         {
            List<userDetails> oDetail = new List<Pidilite.userDetails>();
@@ -271,7 +287,6 @@ namespace Pidilite
             }
             return oDetail[0];
                 }
-
     }
 
     public class userDetails

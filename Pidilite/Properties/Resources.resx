@@ -124,14 +124,8 @@
   <data name="icon_plus_white" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\icon_plus_white.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="OpenSans_LightItalic" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\OpenSans-LightItalic.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
   <data name="icon_minus" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\icon_minus.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="OpenSans_Italic" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\OpenSans-Italic.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="OpenSans_Light" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\OpenSans-Light.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
@@ -145,9 +139,6 @@
   <data name="Login" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Login.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="OpenSans_Regular" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\OpenSans-Regular.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
   <data name="icon_Cancel" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\icon_Cancel.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -156,9 +147,6 @@
   </data>
   <data name="icon_lock" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\icon_lock.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="OpenSans_Semibold" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\OpenSans-Semibold.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="line_dotted" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\line_dotted.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -187,20 +175,11 @@
   <data name="icon_mail" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\icon_mail.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="OpenSans_ExtraBold" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\OpenSans-ExtraBold.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="OpenSans_BoldItalic" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\OpenSans-BoldItalic.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
   <data name="back1" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\back1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="icon_close" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\icon_close.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="OpenSans_SemiboldItalic" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\OpenSans-SemiboldItalic.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="icon_password" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\icon_password.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -208,10 +187,31 @@
   <data name="icon_Sever" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\icon_Sever.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="favicon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\favicon.ico;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="OpenSans_BoldItalic" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OpenSans-BoldItalic.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="OpenSans_ExtraBold" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OpenSans-ExtraBold.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="OpenSans_ExtraBoldItalic" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\OpenSans-ExtraBoldItalic.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="favicon" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\favicon.ico;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="OpenSans_Italic" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OpenSans-Italic.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="OpenSans_LightItalic" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OpenSans-LightItalic.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="OpenSans_Regular" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OpenSans-Regular.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="OpenSans_Semibold" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OpenSans-Semibold.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="OpenSans_SemiboldItalic" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OpenSans-SemiboldItalic.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
 </root>

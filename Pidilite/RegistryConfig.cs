@@ -1,11 +1,15 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Drawing;
 using System.Drawing.Text;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Pidilite
 {
@@ -18,9 +22,11 @@ namespace Pidilite
         IntPtr pdv, [System.Runtime.InteropServices.In] ref uint pcFonts);
         public static  PrivateFontCollection pfc = new PrivateFontCollection();
         public static Font myFont, myFontBold,myBCFont,myHeaderFont ;
-
-         static RegistryConfig ()
+        public static string UserName, Password;
+        public static Bitmap userImage { get; set; }
+        static RegistryConfig ()
             {
+            
             byte[] fontData = Properties.Resources.OpenSans_Light;
             IntPtr fontPtr = System.Runtime.InteropServices.Marshal.AllocCoTaskMem(fontData.Length);
             System.Runtime.InteropServices.Marshal.Copy(fontData, 0, fontPtr, fontData.Length);
@@ -76,7 +82,42 @@ namespace Pidilite
             return isRegEmpty; 
         }
         public static string myConn;
+        public static void opGetUserPhoto(string avatar)
+        {
+            try
+            {
 
-       
+                Application.DoEvents();
+                string strURL = ConfigurationManager.AppSettings["Url"].Replace("index.php/windowsapi", "");
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(strURL + "uploads/users/" + avatar);
+                request.Method = "GET";
+                request.ContentType = "application/x-www-form-urlencoded";
+                request.Timeout = 300000;
+                using (HttpWebResponse lxResponse = (HttpWebResponse)request.GetResponse())
+                {
+                    using (BinaryReader reader = new BinaryReader(lxResponse.GetResponseStream()))
+                    {
+                        Byte[] lnByte = reader.ReadBytes(1 * 1024 * 1024 * 10);
+
+                        userImage = ByteToImage(lnByte);
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Getting Avatar: " + ex.Message + ex.StackTrace, Log.Status.Error);
+            }
+        }
+        public static Bitmap ByteToImage(byte[] blob)
+        {
+            MemoryStream mStream = new MemoryStream();
+            byte[] pData = blob;
+            mStream.Write(pData, 0, Convert.ToInt32(pData.Length));
+            Bitmap bm = new Bitmap(mStream, false);
+            mStream.Dispose();
+            return bm;
+        }
+
     }
 }

@@ -1,4 +1,6 @@
-﻿using Microsoft.Win32;
+﻿using Microsoft.SqlServer.Management.Common;
+using Microsoft.SqlServer.Management.Smo;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -16,7 +18,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
 namespace Pidilite
 {
     public partial class frmServerDetails : Form
@@ -32,13 +33,17 @@ namespace Pidilite
         public string[] tables;
         public DataTable dt, copyTable;
         public string tableName;
-        public static Bitmap userImage { get; set; }
+        public bool isAvailable = true;
         int second = 0;
         public static string userName { get; set; }
         public string status { get; set; }
         public string newDatabase { get; set; }
         #endregion
-
+        public frmServerDetails(string dbName)
+        {
+            InitializeComponent();
+            newDatabase = dbName;
+        }
         public frmServerDetails(string firstName, string lastName, string dbName)
         {
             InitializeComponent();
@@ -60,12 +65,7 @@ namespace Pidilite
 
             RegistryConfig.myConn = "Server=" + txtServer.Text + ";Integrated security=SSPI;database=master;User Id= " + txtUserID.Text + ";Password =" + txtPwd.Text;
 
-            RegistryKey key = Registry.CurrentUser.CreateSubKey(RegistryConfig.registryName);
-            key.SetValue("server_name", txtServer.Text);
-            key.SetValue("server_user", txtUserID.Text);
-            key.SetValue("server_Pwd", txtPwd.Text);
-            key.SetValue("database", newDatabase);
-            key.Close();
+
             using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
             {
                 con.Open();
@@ -80,50 +80,80 @@ namespace Pidilite
 
             if (isCreated == 0)
             {
-                using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
-                {
-                    con.Open();
-                    using (SqlCommand cmd = new SqlCommand("CREATE DATABASE " + newDatabase, con))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-                RegistryConfig.myConn = "Server=" + txtServer.Text + ";Integrated security=SSPI;database="+newDatabase+";User Id= " + txtUserID.Text + ";Password =" + txtPwd.Text;
-                beGetTableDetails();
-                ObjTable = respJson["dbinfo"];
-                value = ObjTable["tables"];
-                tables = value.ToObject<string[]>();
-                totalTable = tables.Length;
-                try
-                {
-                    if (!backgroundWorker1.IsBusy)
-                    {
-
-                        lblStatus.Text = "Creating tables...";
-                        prgBar.Visible = true;
-                        prgBar.Minimum = 0;
-                        prgBar.Maximum = totalTable;
-                        btnCreate.Enabled = false;
-                        btnCancel.Enabled = true;
-                        backgroundWorker1.RunWorkerAsync();
-
-                    }
-
-
-                }
-                catch (System.Exception ex)
-                {
-                    MessageBox.Show(ex.ToString(), "Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
+                opDataBaseCreation();
             }
             else
             {
-                Hide();
-                frmMaster master = new frmMaster(userName , userImage );             
-                master.Show();
+
+                DialogResult dialogResult = MessageBox.Show("DataBase already exists. Do you want delete and Create again?", "Message", MessageBoxButtons.YesNo);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+                    {
+                        con.Open();
+                        SqlCommand cmd = new SqlCommand("Drop database " + newDatabase, con);
+                        cmd.ExecuteScalar();
+                        opDataBaseCreation();
+                    }
+
+                }
+                else if (dialogResult == DialogResult.No)
+                {
+                    this.Close();
+                }
             }
 
         }
+
+        private void opDataBaseCreation()
+        {
+            using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+            {
+                con.Open();
+                using (SqlCommand cmd = new SqlCommand("CREATE DATABASE " + newDatabase, con))
+                {
+                    cmd.ExecuteScalar();
+                }
+                RegistryKey key = Registry.CurrentUser.CreateSubKey(RegistryConfig.registryName);
+                key.SetValue("server_name", txtServer.Text);
+                key.SetValue("server_user", txtUserID.Text);
+                key.SetValue("server_Pwd", txtPwd.Text);
+                key.SetValue("database", newDatabase);
+                key.Close();
+
+
+            }
+
+
+            RegistryConfig.myConn = "Server=" + txtServer.Text + ";Integrated security=SSPI;database=" + newDatabase + ";User Id= " + txtUserID.Text + ";Password =" + txtPwd.Text;
+            beGetTableDetails();
+            ObjTable = respJson["dbinfo"];
+            value = ObjTable["tables"];
+            tables = value.ToObject<string[]>();
+            totalTable = tables.Length;
+            try
+            {
+                if (!backgroundWorker1.IsBusy)
+                {
+
+                    lblStatus.Text = "Creating tables...";
+                    prgBar.Visible = true;
+                    prgBar.Minimum = 0;
+                    prgBar.Maximum = totalTable;
+                    btnCreate.Enabled = false;
+                    btnCancel.Enabled = true;
+                    backgroundWorker1.RunWorkerAsync();
+
+                }
+
+
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.ToString(), "Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
         private static DataTable toDataTable(JArray jArray)
         {
             var result = new DataTable();
@@ -286,9 +316,14 @@ namespace Pidilite
                         }
                         if (defaultValue[i] != null)
                         {
+
                             if (type[i].Split('(')[0] == "varchar")
                             {
-                                tableCreation = tableCreation + defaultValue[i] + " ";
+                                if (defaultValue[i] == "")
+                                {
+                                    tableCreation = tableCreation + " ";
+                                }
+                                tableCreation = tableCreation + "default " + Convert.ToString(defaultValue[i]) + " ";
                             }
                             if (type[i].ToLower().StartsWith("int"))
                             {
@@ -318,11 +353,12 @@ namespace Pidilite
                                 con.Open();
                             }
                             myCommand.ExecuteNonQuery();
+                            Log.LogData("Table creation Completed", Log.Status.Debug );
                             con.Close();
                         }
                         catch (Exception ex)
                         {
-                            Log.LogData("Error in Table Creation: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                            Log.LogData("Error in Table Creation: " + ex.Message + ex.StackTrace + "Query:" + tableCreation, Log.Status.Error);
                         }
                     }
                 }
@@ -331,16 +367,33 @@ namespace Pidilite
                 Application.DoEvents();
 
             }
+            //try
+            //{
+            //    using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+            //    {
+            //        ServerConnection svrConnection = new ServerConnection(con);
+            //        Server server = new Server(svrConnection);
+            //        server.ConnectionContext.ExecuteNonQuery(StoreProcedure.str);
+            //        Log.LogData("SP creation Completed", Log.Status.Debug);
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Log.LogData("Error in Creating Store Procedures: " + ex.Message + ex.StackTrace, Log.Status.Error);
+            //}
             try
+            { 
+            using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
             {
-                using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
-                {
-                    con.Open();
-                    using (SqlCommand cmd = new SqlCommand(StoreProcedure.str, con))
+                con.Open();
+                    foreach (var qry in StoreProcedure.spArray)
                     {
-                        var i = cmd.ExecuteNonQuery();
-
-
+                        SqlCommand Cmd = new SqlCommand(qry);
+                        Cmd.Connection = con;
+                        Cmd.CommandType = CommandType.Text;
+                        Cmd.ExecuteScalar();
+                        Cmd.Dispose();
+                        Cmd = null;
                     }
                 }
             }
@@ -348,7 +401,6 @@ namespace Pidilite
             {
                 Log.LogData("Error in Creating Store Procedures: " + ex.Message + ex.StackTrace, Log.Status.Error);
             }
-
         }
         #endregion
         private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -375,10 +427,12 @@ namespace Pidilite
                 Thread.Sleep(1000);
                 if (!backgroundWorker2.IsBusy)
                 {
-                    lblStatus.Text = "Configuring Default values...";
-                    prgBar.Visible = true;
                     prgBar.Minimum = 0;
-                    prgBar.Maximum = totalTable;
+
+                    lblStatus.Text = "Configuring Default values...";
+                    beGetDefaultValues();
+                    prgBar.Maximum = ObjTable.Children<JToken>().Count();
+                    prgBar.Visible = true;
                     btnCreate.Enabled = false;
                     btnCancel.Enabled = true;
                     backgroundWorker2.RunWorkerAsync();
@@ -395,83 +449,86 @@ namespace Pidilite
         }
         private void backgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
         {
-            opSaveMenuDetails();
-            opSaveModuleDetails();
-            beGetDefaultValues();
-            ObjTable = respJson["tableInfo"];
-
-            foreach (var info in ObjTable.Children<JToken>())
+            try
             {
-                tableName = ((JProperty)info).Name;
-                dt = new DataTable();
-                dt = toDataTable(((JProperty)info).Value.ToObject<JArray>());
+                opGetUserDetails();
+                Log.LogData("GetUserDetails Completed", Log.Status.Debug);
+                DataTable dtUsers = new DataTable();
+                dtUsers = (DataTable)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(respJson), (typeof(DataTable)));
+                opBulkCopy(dtUsers, "tb_Users");
+                opUpdateUserPassword();
+                Log.LogData("opUpdateUserPassword Completed", Log.Status.Debug);
+                opSaveMenuDetails();
+                Log.LogData("opSaveMenuDetails Completed", Log.Status.Debug);
+                opSaveModuleDetails();
+                Log.LogData("opSaveModuleDetails Completed", Log.Status.Debug);
+                beGetDefaultValues();
+                Log.LogData("beGetDefaultValues Completed", Log.Status.Debug);
+                int j = 0;
+                ObjTable = respJson["tableInfo"];
 
-                DataTable formatDtble = dt.Clone();
-                if (dt.Rows.Count != 0)
+                foreach (var info in ObjTable.Children<JToken>())
                 {
-                    object[] objRow = dt.Rows[0].ItemArray;
-                    for (int i = 0; i < objRow.Length; i++)
+                    tableName = ((JProperty)info).Name;
+                    dt = new DataTable();
+                    dt = toDataTable(((JProperty)info).Value.ToObject<JArray>());
+
+                    DataTable formatDtble = dt.Clone();
+                    if (dt.Rows.Count != 0)
                     {
-                        DateTime date;
-                        var val = objRow[i].ToString();
-                        if (DateTime.TryParse(val, out date) || val == "0000-00-00 00:00:00")
+                        object[] objRow = dt.Rows[0].ItemArray;
+                        for (int i = 0; i < objRow.Length; i++)
                         {
-                            formatDtble.Columns[i].DataType = typeof(DateTime);
-                        }
-                    }
-
-
-                    foreach (DataRow dr in dt.Rows)
-                    {
-                        object[] objData = dr.ItemArray;
-                        for (int i = 0; i < objData.Length; i++)
-                        {
-
-
                             DateTime date;
-                            var val = objData[i].ToString();
+                            var val = objRow[i].ToString();
                             if (DateTime.TryParse(val, out date) || val == "0000-00-00 00:00:00")
                             {
-                                if (val == "0000-00-00 00:00:00")
-                                {
-                                    date = Convert.ToDateTime("1753-01-01 00:00:00");
-
-                                }
-                                else
-                                {
-                                    date = Convert.ToDateTime(val);
-                                }
-                                date = DateTime.ParseExact(date.ToString("dd-MM-yyyy hh:mm:ss"), "dd-MM-yyyy hh:mm:ss", CultureInfo.InvariantCulture);
-
-                                objData[i] = date;
-
+                                formatDtble.Columns[i].DataType = typeof(DateTime);
                             }
                         }
-                        formatDtble.Rows.Add(objData);
 
-                    }
 
-                    using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
-                    {
-                        using (var bulkCopy = new SqlBulkCopy(con))
+                        foreach (DataRow dr in dt.Rows)
                         {
-                            con.Open();
-                            // my DataTable column names match my SQL Column names, so I simply made this loop.
-                            //However if your column names don't match, just pass in which datatable name matches the SQL column name in Column Mappings
-                            foreach (DataColumn col in formatDtble.Columns)
+                            object[] objData = dr.ItemArray;
+                            for (int i = 0; i < objData.Length; i++)
                             {
-                                bulkCopy.ColumnMappings.Add(col.ColumnName, col.ColumnName);
+
+
+                                DateTime date;
+                                var val = objData[i].ToString();
+                                if (DateTime.TryParse(val, out date) || val == "0000-00-00 00:00:00")
+                                {
+                                    if (val == "0000-00-00 00:00:00")
+                                    {
+                                        date = Convert.ToDateTime("1753-01-01 00:00:00");
+
+                                    }
+                                    else
+                                    {
+                                        date = Convert.ToDateTime(val);
+                                    }
+                                    date = DateTime.ParseExact(date.ToString("dd-MM-yyyy hh:mm:ss"), "dd-MM-yyyy hh:mm:ss", CultureInfo.InvariantCulture);
+
+                                    objData[i] = date;
+
+                                }
                             }
+                            formatDtble.Rows.Add(objData);
 
-                            bulkCopy.BulkCopyTimeout = 600;
-                            bulkCopy.DestinationTableName = tableName;
-                            bulkCopy.WriteToServer(formatDtble);
                         }
+                        opBulkCopy(formatDtble, tableName);
+                        Log.LogData("opBulkCopy Completed", Log.Status.Debug);
                     }
+                    backgroundWorker2.ReportProgress(j);
+                    j++;
                 }
-            }
 
-            
+            }
+            catch(Exception ex)
+            {
+                Log.LogData("Error in Default Values Configuration: " + ex.Message + ex.StackTrace, Log.Status.Error);
+            }
         }
         private void backgroundWorker2_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
@@ -488,12 +545,49 @@ namespace Pidilite
             {
                 lblStatus.Text = "configuration of table's default value completed...";
                 Thread.Sleep(1000);
-                frmMaster masterForm = new frmMaster(userName, userImage);
+                this.Hide();
+                frmMaster masterForm = new frmMaster(userName, RegistryConfig.userImage);
                 masterForm.Show();
 
             }
         }
         #endregion
+        public void opUpdateUserPassword()
+        {
+            try
+            {
+                using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+                {
+                    con.Open();
+                    var vEncryptedPassword = EncryptionDecryption.SHA1HashStringForUTF8String(RegistryConfig.Password);
+                    SqlCommand Cmd = new SqlCommand();
+                    Cmd.Connection = con;
+                    Cmd.CommandText = "usp_UpadteUserWPassword";
+                    Cmd.CommandType = CommandType.StoredProcedure;
+                    Cmd.Parameters.AddWithValue("@UserName", RegistryConfig.UserName);
+                    Cmd.Parameters.AddWithValue("@Password", Convert.ToString(vEncryptedPassword));
+                    if (isAvailable == true)
+                        Cmd.Parameters.AddWithValue("@UserPhoto", ImageToByte(RegistryConfig.userImage));
+                    else
+                    {
+                        Cmd.Parameters.Add("@UserPhoto", SqlDbType.VarBinary, -1);
+
+                        Cmd.Parameters["@UserPhoto"].Value = DBNull.Value;
+                    }
+                    Cmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Updating User WPassword: " + ex.Message + ex.StackTrace, Log.Status.Error);
+            }
+        }
+
+        public static byte[] ImageToByte(Image img)
+        {
+            ImageConverter converter = new ImageConverter();
+            return (byte[])converter.ConvertTo(img, typeof(byte[]));
+        }
         public void beGetDefaultValues()
         {
             Application.DoEvents();
@@ -515,42 +609,30 @@ namespace Pidilite
 
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                Log.LogData("Error in Getting Default Values: " + ex.Message + ex.StackTrace, Log.Status.Error);
             }
         }
         public void frmReadPNG(string avatar)
         {
-            String lsResponse = string.Empty;
+            if (avatar != null && avatar != "")
             {
-
-                Application.DoEvents();
-                string strURL = ConfigurationManager.AppSettings["Url"].Replace("windowsapi", "");
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(strURL + "uploads/users/" + avatar);
-                request.Method = "GET";
-                request.ContentType = "application/x-www-form-urlencoded";
-                request.Timeout = 300000;
-                using (HttpWebResponse lxResponse = (HttpWebResponse)request.GetResponse())
-                {
-                    using (BinaryReader reader = new BinaryReader(lxResponse.GetResponseStream()))
-                    {
-                        Byte[] lnByte = reader.ReadBytes(1 * 1024 * 1024 * 10);
-                        userImage = ByteToImage(lnByte);
-                        pbAvatar.Image = userImage;
-                    }
-                }
+                RegistryConfig.opGetUserPhoto(avatar);
+                isAvailable = true;
             }
+            else
+            {
+                RegistryConfig.userImage = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.UserCircle)
+                { ForeColor = SystemColors.ButtonFace, Size = 80 });
+                isAvailable = false;
+            }
+            pbAvatar.Image = RegistryConfig.userImage;
         }
-        public static Bitmap ByteToImage(byte[] blob)
-        {
-            MemoryStream mStream = new MemoryStream();
-            byte[] pData = blob;
-            mStream.Write(pData, 0, Convert.ToInt32(pData.Length));
-            Bitmap bm = new Bitmap(mStream, false);
-            mStream.Dispose();
-            return bm;
-        }
+
+
+
+
         private void txtServer_Click(object sender, EventArgs e)
         {
             lblStatus.Text = "";
@@ -638,86 +720,11 @@ namespace Pidilite
 
 
         }
-        private void opSaveMenuDetails()
-
+        private void opGetUserDetails()
         {
-            opGetDashbordMenu();
-            
 
-            using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
-            {
-                con.Open();
-                foreach (var obj in respJson)
-                {
-                    SqlCommand Cmd = new SqlCommand();
-                    Cmd.Connection = con;
-                    Cmd.CommandText = "usp_InsertMenu";
-                    Cmd.CommandType = CommandType.StoredProcedure;
-                    Cmd.Parameters.AddWithValue("@id", obj["id"].Value);
-                    Cmd.Parameters.AddWithValue("@name", obj["name"].Value);
-                    Cmd.Parameters.AddWithValue("@logoClass", obj["logoClass"].Value);
-                    Cmd.Parameters.AddWithValue("@logo", obj["logo"].Value);
-                    Cmd.Parameters.AddWithValue("@backgroundColor", obj["backgroundColor"].Value);
-                    Cmd.Parameters.AddWithValue("@parentId", obj["parentId"].Value);
-                    Cmd.Parameters.AddWithValue("@moduleName", obj["moduleName"].Value);
-                    Cmd.Parameters.AddWithValue("@moduleId", obj["moduleId"].Value);
-                    Cmd.Parameters.AddWithValue("@position", obj["position"].Value);
-                    Cmd.Parameters.AddWithValue("@ordering", obj["ordering"].Value == null ? 0 : obj["ordering"].Value);
-                    var vOpCode = Cmd.Parameters.Add("@OpCode", SqlDbType.SmallInt);
-                    vOpCode.Direction = ParameterDirection.Output;
-                    var vResults = Cmd.ExecuteNonQuery();
-                    Cmd.Dispose();
-                    Cmd = null;
-
-
-                }
-            }
-
-        }
-        private void opSaveModuleDetails() 
-
-        {
-            List<moduleDetails> oModuleDetails = new List<moduleDetails>();
-            oModuleDetails=opGetModuleDetails();
-            using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
-            {
-                con.Open();
-                foreach (var obj in oModuleDetails)
-                {
-                    SqlCommand Cmd = new SqlCommand();
-                    Cmd.Connection = con;
-                    Cmd.CommandText = "usp_InsertModuleDetails";
-                    Cmd.CommandType = CommandType.StoredProcedure;
-                    Cmd.Parameters.AddWithValue("@ModuleId", obj.module_id );
-                    Cmd.Parameters.AddWithValue("@ModuleName", obj.module_name);
-                    Cmd.Parameters.AddWithValue("@ModuleTitle", obj.module_title);
-                    Cmd.Parameters.AddWithValue("@ModuleNote", obj.module_note);
-                    Cmd.Parameters.AddWithValue("@ModuleDB", obj.module_db);
-                    Cmd.Parameters.AddWithValue("@ModuleDBKey", obj.module_db_key);
-                    Cmd.Parameters.AddWithValue("@ModuleType", obj.module_type);
-                    Cmd.Parameters.AddWithValue("@ModuleDivision", obj.module_division);
-                    Cmd.Parameters.AddWithValue("@ModuleAccessServer", obj.module_access_server);
-                    Cmd.Parameters.AddWithValue("@ModuleForm", JsonConvert.SerializeObject(obj.forms));
-                    Cmd.Parameters.AddWithValue("@ModuleGrid", JsonConvert.SerializeObject(obj.grid));
-                    Cmd.Parameters.AddWithValue("@SqlSelect", obj.sql_select == null ? "" : obj.sql_select);
-                    Cmd.Parameters.AddWithValue("@SqlWhere", obj.sql_where == null ? "" : obj.sql_where);
-                    Cmd.Parameters.AddWithValue("@SqlGroup", obj.sql_group == null ? "" : obj.sql_group);
-                    var vOpCode = Cmd.Parameters.Add("@OpCode", SqlDbType.SmallInt);
-                    vOpCode.Direction = ParameterDirection.Output;
-                    var vResults = Cmd.ExecuteNonQuery();
-                    Cmd.Dispose();
-                    Cmd = null;
-
-
-                }
-            }
-
-        }
-        private List<moduleDetails> opGetModuleDetails ()
-        {
-            List<moduleDetails> oModuleDetails = new List<moduleDetails>();
             Application.DoEvents();
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(ConfigurationManager.AppSettings["Url"] + "/dbmoduledetailinfo?dbName=" + newDatabase );
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(ConfigurationManager.AppSettings["Url"] + "/tbusers?dbName=" + newDatabase);
             request.Method = "GET";
             request.ContentType = "application/x-www-form-urlencoded";
             request.Timeout = 300000;
@@ -730,7 +737,149 @@ namespace Pidilite
                         var theResponseStream = new StreamReader(response.GetResponseStream());
                         string result = theResponseStream.ReadToEnd();
                         respJson = JsonConvert.DeserializeObject<dynamic>(result);
-                       // oModuleDetails = respJson["module"];
+                        respJson = respJson["tableInfo"];
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Getting Dashboard Menus: " + ex.Message + ex.StackTrace, Log.Status.Error);
+            }
+
+
+        }
+
+        private void opBulkCopy(DataTable formatDtble, string tableName)
+        {
+            try
+            {
+                using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+                {
+                    using (var bulkCopy = new SqlBulkCopy(con))
+                    {
+                        con.Open();
+                        // my DataTable column names match my SQL Column names, so I simply made this loop.
+                        //However if your column names don't match, just pass in which datatable name matches the SQL column name in Column Mappings
+                        foreach (DataColumn col in formatDtble.Columns)
+                        {
+                            bulkCopy.ColumnMappings.Add(col.ColumnName, col.ColumnName);
+                        }
+
+                        bulkCopy.BulkCopyTimeout = 600;
+                        bulkCopy.DestinationTableName = tableName;
+                        bulkCopy.WriteToServer(formatDtble);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Bulk Copy: " + ex.Message + ex.StackTrace, Log.Status.Error);
+            }
+        }
+        private void opSaveMenuDetails()
+
+        {
+            opGetDashbordMenu();
+
+            try
+            { 
+
+            using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+            {
+                con.Open();
+                    foreach (var obj in respJson)
+                    {
+                        SqlCommand Cmd = new SqlCommand();
+                        Cmd.Connection = con;
+                        Cmd.CommandText = "usp_InsertMenu";
+                        Cmd.CommandType = CommandType.StoredProcedure;
+                        Cmd.Parameters.AddWithValue("@id", obj["id"].Value);
+                        Cmd.Parameters.AddWithValue("@name", obj["name"].Value);
+                        Cmd.Parameters.AddWithValue("@logoClass", obj["logoClass"].Value);
+                        Cmd.Parameters.AddWithValue("@logo", obj["logo"].Value);
+                        Cmd.Parameters.AddWithValue("@backgroundColor", obj["backgroundColor"].Value);
+                        Cmd.Parameters.AddWithValue("@parentId", obj["parentId"].Value);
+                        Cmd.Parameters.AddWithValue("@moduleName", obj["moduleName"].Value);
+                        Cmd.Parameters.AddWithValue("@moduleId", obj["moduleId"].Value);
+                        Cmd.Parameters.AddWithValue("@position", obj["position"].Value);
+                        Cmd.Parameters.AddWithValue("@ordering", obj["ordering"].Value == null ? 0 : obj["ordering"].Value);
+                        var vOpCode = Cmd.Parameters.Add("@OpCode", SqlDbType.SmallInt);
+                        vOpCode.Direction = ParameterDirection.Output;
+                        var vResults = Cmd.ExecuteNonQuery();
+                        Cmd.Dispose();
+                        Cmd = null;
+
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                Log.LogData("Error in Inserting Menu: " + ex.Message + ex.StackTrace, Log.Status.Error);
+            }
+
+        }
+        public void opSaveModuleDetails()
+
+        {
+            try { 
+            List<moduleDetails> oModuleDetails = new List<moduleDetails>();
+            oModuleDetails = opGetModuleDetails();
+            using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+            {
+                con.Open();
+                    foreach (var obj in oModuleDetails)
+                    {
+                        SqlCommand Cmd = new SqlCommand();
+                        Cmd.Connection = con;
+                        Cmd.CommandText = "usp_InsertModuleDetails";
+                        Cmd.CommandType = CommandType.StoredProcedure;
+                        Cmd.Parameters.AddWithValue("@ModuleId", obj.module_id);
+                        Cmd.Parameters.AddWithValue("@ModuleName", obj.module_name);
+                        Cmd.Parameters.AddWithValue("@ModuleTitle", obj.module_title);
+                        Cmd.Parameters.AddWithValue("@ModuleNote", obj.module_note);
+                        Cmd.Parameters.AddWithValue("@ModuleDB", obj.module_db);
+                        Cmd.Parameters.AddWithValue("@ModuleDBKey", obj.module_db_key);
+                        Cmd.Parameters.AddWithValue("@ModuleType", obj.module_type);
+                        Cmd.Parameters.AddWithValue("@ModuleDivision", obj.module_division);
+                        Cmd.Parameters.AddWithValue("@ModuleAccessServer", obj.module_access_server);
+                        Cmd.Parameters.AddWithValue("@ModuleForm", JsonConvert.SerializeObject(obj.forms));
+                        Cmd.Parameters.AddWithValue("@ModuleGrid", JsonConvert.SerializeObject(obj.grid));
+                        Cmd.Parameters.AddWithValue("@SqlSelect", obj.sql_select == null ? "" : obj.sql_select);
+                        Cmd.Parameters.AddWithValue("@SqlWhere", obj.sql_where == null ? "" : obj.sql_where);
+                        Cmd.Parameters.AddWithValue("@SqlGroup", obj.sql_group == null ? "" : obj.sql_group);
+                        var vOpCode = Cmd.Parameters.Add("@OpCode", SqlDbType.SmallInt);
+                        vOpCode.Direction = ParameterDirection.Output;
+                        var vResults = Cmd.ExecuteNonQuery();
+                        Cmd.Dispose();
+                        Cmd = null;
+
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                Log.LogData("Error in Inserting Module Details: " + ex.Message + ex.StackTrace, Log.Status.Error);
+            }
+        }
+        private List<moduleDetails> opGetModuleDetails()
+        {
+            List<moduleDetails> oModuleDetails = new List<moduleDetails>();
+            Application.DoEvents();
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(ConfigurationManager.AppSettings["Url"] + "/dbmoduledetailinfo?dbName=" + newDatabase);
+            request.Method = "GET";
+            request.ContentType = "application/x-www-form-urlencoded";
+            request.Timeout = 300000;
+            try
+            {
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                {
+                    if (response.StatusCode == HttpStatusCode.OK)
+                    {
+                        var theResponseStream = new StreamReader(response.GetResponseStream());
+                        string result = theResponseStream.ReadToEnd();
+                        respJson = JsonConvert.DeserializeObject<dynamic>(result);
+                        // oModuleDetails = respJson["module"];
                         oModuleDetails = JsonConvert.DeserializeObject<List<moduleDetails>>(JsonConvert.SerializeObject(respJson["module"]));
                     }
 
@@ -748,20 +897,20 @@ namespace Pidilite
 
     public class moduleDetails
     {
-       public string  module_id { get; set; }
+        public string module_id { get; set; }
         public string module_name { get; set; }
-        public string  module_title { get; set; }
-        public string  module_note { get; set; }
-        public string  module_db { get; set; }
-        public string  module_db_key { get; set; }
-        public string  module_type { get; set; }
-        public string  module_division { get; set; }
-        public string  module_access_server { get; set; }
-        public JArray   forms { get; set; }
+        public string module_title { get; set; }
+        public string module_note { get; set; }
+        public string module_db { get; set; }
+        public string module_db_key { get; set; }
+        public string module_type { get; set; }
+        public string module_division { get; set; }
+        public string module_access_server { get; set; }
+        public JArray forms { get; set; }
         public JArray grid { get; set; }
-        public string  sql_select { get; set; }
-        public string  sql_where { get; set; }
-        public string  sql_group { get; set; }
+        public string sql_select { get; set; }
+        public string sql_where { get; set; }
+        public string sql_group { get; set; }
     }
 }
 

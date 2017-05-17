@@ -47,6 +47,7 @@ namespace Pidilite
             this.pnlLogo = new System.Windows.Forms.Panel();
             this.pbCornorLogo = new System.Windows.Forms.PictureBox();
             this.pnlTop = new System.Windows.Forms.Panel();
+            this.btnModule = new System.Windows.Forms.Button();
             this.pnlCentre = new System.Windows.Forms.Panel();
             this.lblUserName = new System.Windows.Forms.Label();
             this.pbAvatar = new Pidilite.CirclePictureBox();
@@ -58,6 +59,7 @@ namespace Pidilite
             ((System.ComponentModel.ISupportInitialize)(this.pbBreadCrumb)).BeginInit();
             this.pnlLogo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbCornorLogo)).BeginInit();
+            this.pnlTop.SuspendLayout();
             this.pnlCentre.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbAvatar)).BeginInit();
             this.SuspendLayout();
@@ -231,11 +233,26 @@ namespace Pidilite
             this.pnlTop.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pnlTop.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(9)))), ((int)(((byte)(52)))), ((int)(((byte)(93)))));
+            this.pnlTop.Controls.Add(this.btnModule);
             this.pnlTop.ForeColor = System.Drawing.Color.White;
             this.pnlTop.Location = new System.Drawing.Point(0, 24);
             this.pnlTop.Name = "pnlTop";
             this.pnlTop.Size = new System.Drawing.Size(1122, 28);
             this.pnlTop.TabIndex = 14;
+            // 
+            // btnModule
+            // 
+            this.btnModule.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(9)))), ((int)(((byte)(52)))), ((int)(((byte)(93)))));
+            this.btnModule.Dock = System.Windows.Forms.DockStyle.Right;
+            this.btnModule.Enabled = true;
+            this.btnModule.FlatAppearance.BorderSize = 0;
+            this.btnModule.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnModule.Location = new System.Drawing.Point(1096, 0);
+            this.btnModule.Name = "btnModule";
+            this.btnModule.Size = new System.Drawing.Size(26, 28);
+            this.btnModule.TabIndex = 0;
+            this.btnModule.UseVisualStyleBackColor = true;
+            this.btnModule.Click += new System.EventHandler(btnModule_Click);
             // 
             // pnlCentre
             // 
@@ -295,6 +312,7 @@ namespace Pidilite
             ((System.ComponentModel.ISupportInitialize)(this.pbBreadCrumb)).EndInit();
             this.pnlLogo.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pbCornorLogo)).EndInit();
+            this.pnlTop.ResumeLayout(false);
             this.pnlCentre.ResumeLayout(false);
             this.pnlCentre.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbAvatar)).EndInit();
@@ -310,10 +328,6 @@ namespace Pidilite
         private System.Windows.Forms.Panel pnlCentre;
         private System.Windows.Forms.PictureBox pbCornorLogo;
         private System.Windows.Forms.FlowLayoutPanel  pnlMainMenu;
-      //private System.Windows.Forms.Panel pnlRight;    
-      //  private System.Windows.Forms.PictureBox pbRestore;
-      //  private System.Windows.Forms.Label lblClose;
-       // private System.Windows.Forms.PictureBox pbMinimize;
         private System.Windows.Forms.Panel  pnlData;
         private System.Windows.Forms.Panel pnlBreadCrumb;
         private System.Windows.Forms.Label lblBreadCrumb;
@@ -326,5 +340,6 @@ namespace Pidilite
         private Label lblMinimize;
         private Label lblClose;
         private PictureBox pbIcon;
+        private Button btnModule;
     }
 }

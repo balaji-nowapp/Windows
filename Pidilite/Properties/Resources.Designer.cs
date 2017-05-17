@@ -22,7 +22,7 @@ namespace Pidilite.Properties {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Resources {
+    public class Resources {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -36,7 +36,7 @@ namespace Pidilite.Properties {
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager {
+        public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Pidilite.Properties.Resources", typeof(Resources).Assembly);
@@ -51,7 +51,7 @@ namespace Pidilite.Properties {
         ///   resource lookups using this strongly typed resource class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture {
+        public static global::System.Globalization.CultureInfo Culture {
             get {
                 return resourceCulture;
             }
@@ -63,7 +63,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap back1 {
+        public static System.Drawing.Bitmap back1 {
             get {
                 object obj = ResourceManager.GetObject("back1", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -73,7 +73,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap Cornor_logo {
+        public static System.Drawing.Bitmap Cornor_logo {
             get {
                 object obj = ResourceManager.GetObject("Cornor_logo", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -83,7 +83,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap favicon {
+        public static System.Drawing.Bitmap favicon {
             get {
                 object obj = ResourceManager.GetObject("favicon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -93,7 +93,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_Cancel {
+        public static System.Drawing.Bitmap icon_Cancel {
             get {
                 object obj = ResourceManager.GetObject("icon_Cancel", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -103,7 +103,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_close {
+        public static System.Drawing.Bitmap icon_close {
             get {
                 object obj = ResourceManager.GetObject("icon_close", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -113,7 +113,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_create {
+        public static System.Drawing.Bitmap icon_create {
             get {
                 object obj = ResourceManager.GetObject("icon_create", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -123,7 +123,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_lock {
+        public static System.Drawing.Bitmap icon_lock {
             get {
                 object obj = ResourceManager.GetObject("icon_lock", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -133,7 +133,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_mail {
+        public static System.Drawing.Bitmap icon_mail {
             get {
                 object obj = ResourceManager.GetObject("icon_mail", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -143,7 +143,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_menu {
+        public static System.Drawing.Bitmap icon_menu {
             get {
                 object obj = ResourceManager.GetObject("icon_menu", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -153,7 +153,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_menu1 {
+        public static System.Drawing.Bitmap icon_menu1 {
             get {
                 object obj = ResourceManager.GetObject("icon_menu1", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -163,7 +163,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_minimize {
+        public static System.Drawing.Bitmap icon_minimize {
             get {
                 object obj = ResourceManager.GetObject("icon_minimize", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -173,7 +173,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_minus {
+        public static System.Drawing.Bitmap icon_minus {
             get {
                 object obj = ResourceManager.GetObject("icon_minus", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -183,7 +183,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_Org {
+        public static System.Drawing.Bitmap icon_Org {
             get {
                 object obj = ResourceManager.GetObject("icon_Org", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -193,7 +193,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_password {
+        public static System.Drawing.Bitmap icon_password {
             get {
                 object obj = ResourceManager.GetObject("icon_password", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -203,7 +203,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_password1 {
+        public static System.Drawing.Bitmap icon_password1 {
             get {
                 object obj = ResourceManager.GetObject("icon_password1", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -213,7 +213,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_plus {
+        public static System.Drawing.Bitmap icon_plus {
             get {
                 object obj = ResourceManager.GetObject("icon_plus", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -223,7 +223,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_plus_white {
+        public static System.Drawing.Bitmap icon_plus_white {
             get {
                 object obj = ResourceManager.GetObject("icon_plus_white", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -233,7 +233,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_Restore {
+        public static System.Drawing.Bitmap icon_Restore {
             get {
                 object obj = ResourceManager.GetObject("icon_Restore", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -243,7 +243,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap icon_Sever {
+        public static System.Drawing.Bitmap icon_Sever {
             get {
                 object obj = ResourceManager.GetObject("icon_Sever", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -253,7 +253,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap line_dotted {
+        public static System.Drawing.Bitmap line_dotted {
             get {
                 object obj = ResourceManager.GetObject("line_dotted", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -263,7 +263,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap Login {
+        public static System.Drawing.Bitmap Login {
             get {
                 object obj = ResourceManager.GetObject("Login", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -273,7 +273,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap logo {
+        public static System.Drawing.Bitmap logo {
             get {
                 object obj = ResourceManager.GetObject("logo", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
@@ -283,7 +283,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] OpenSans_Bold {
+        public static byte[] OpenSans_Bold {
             get {
                 object obj = ResourceManager.GetObject("OpenSans_Bold", resourceCulture);
                 return ((byte[])(obj));
@@ -293,7 +293,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] OpenSans_BoldItalic {
+        public static byte[] OpenSans_BoldItalic {
             get {
                 object obj = ResourceManager.GetObject("OpenSans_BoldItalic", resourceCulture);
                 return ((byte[])(obj));
@@ -303,7 +303,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] OpenSans_ExtraBold {
+        public static byte[] OpenSans_ExtraBold {
             get {
                 object obj = ResourceManager.GetObject("OpenSans_ExtraBold", resourceCulture);
                 return ((byte[])(obj));
@@ -313,7 +313,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] OpenSans_ExtraBoldItalic {
+        public static byte[] OpenSans_ExtraBoldItalic {
             get {
                 object obj = ResourceManager.GetObject("OpenSans_ExtraBoldItalic", resourceCulture);
                 return ((byte[])(obj));
@@ -323,7 +323,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] OpenSans_Italic {
+        public static byte[] OpenSans_Italic {
             get {
                 object obj = ResourceManager.GetObject("OpenSans_Italic", resourceCulture);
                 return ((byte[])(obj));
@@ -333,7 +333,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] OpenSans_Light {
+        public static byte[] OpenSans_Light {
             get {
                 object obj = ResourceManager.GetObject("OpenSans_Light", resourceCulture);
                 return ((byte[])(obj));
@@ -343,7 +343,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] OpenSans_LightItalic {
+        public static byte[] OpenSans_LightItalic {
             get {
                 object obj = ResourceManager.GetObject("OpenSans_LightItalic", resourceCulture);
                 return ((byte[])(obj));
@@ -353,7 +353,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] OpenSans_Regular {
+        public static byte[] OpenSans_Regular {
             get {
                 object obj = ResourceManager.GetObject("OpenSans_Regular", resourceCulture);
                 return ((byte[])(obj));
@@ -363,7 +363,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] OpenSans_Semibold {
+        public static byte[] OpenSans_Semibold {
             get {
                 object obj = ResourceManager.GetObject("OpenSans_Semibold", resourceCulture);
                 return ((byte[])(obj));
@@ -373,7 +373,7 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] OpenSans_SemiboldItalic {
+        public static byte[] OpenSans_SemiboldItalic {
             get {
                 object obj = ResourceManager.GetObject("OpenSans_SemiboldItalic", resourceCulture);
                 return ((byte[])(obj));
