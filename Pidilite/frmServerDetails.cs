@@ -353,7 +353,7 @@ namespace Pidilite
                                 con.Open();
                             }
                             myCommand.ExecuteNonQuery();
-                            Log.LogData("Table creation Completed", Log.Status.Debug );
+                            Log.LogData("Table creation Completed", Log.Status.Debug);
                             con.Close();
                         }
                         catch (Exception ex)
@@ -366,41 +366,42 @@ namespace Pidilite
                 j++;
                 Application.DoEvents();
 
+                //}
+                //try
+                //{
+                //    using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+                //    {
+                //        ServerConnection svrConnection = new ServerConnection(con);
+                //        Server server = new Server(svrConnection);
+                //        server.ConnectionContext.ExecuteNonQuery(StoreProcedure.str);
+                //        Log.LogData("SP creation Completed", Log.Status.Debug);
+                //    }
+                //}
+                //catch (Exception ex)
+                //{
+                //    Log.LogData("Error in Creating Store Procedures: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                //}
             }
-            //try
-            //{
-            //    using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
-            //    {
-            //        ServerConnection svrConnection = new ServerConnection(con);
-            //        Server server = new Server(svrConnection);
-            //        server.ConnectionContext.ExecuteNonQuery(StoreProcedure.str);
-            //        Log.LogData("SP creation Completed", Log.Status.Debug);
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Log.LogData("Error in Creating Store Procedures: " + ex.Message + ex.StackTrace, Log.Status.Error);
-            //}
-            try
-            { 
-            using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
-            {
-                con.Open();
-                    foreach (var qry in StoreProcedure.spArray)
+                try
+                {
+                    using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
                     {
-                        SqlCommand Cmd = new SqlCommand(qry);
-                        Cmd.Connection = con;
-                        Cmd.CommandType = CommandType.Text;
-                        Cmd.ExecuteScalar();
-                        Cmd.Dispose();
-                        Cmd = null;
+                        con.Open();
+                        foreach (var qry in StoreProcedure.spArray)
+                        {
+                            SqlCommand Cmd = new SqlCommand(qry);
+                            Cmd.Connection = con;
+                            Cmd.CommandType = CommandType.Text;
+                            Cmd.ExecuteScalar();
+                            Cmd.Dispose();
+                            Cmd = null;
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.LogData("Error in Creating Store Procedures: " + ex.Message + ex.StackTrace, Log.Status.Error);
-            }
+                catch (Exception ex)
+                {
+                    Log.LogData("Error in Creating Store Procedures: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                }            
         }
         #endregion
         private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -623,8 +624,16 @@ namespace Pidilite
             }
             else
             {
-                RegistryConfig.userImage = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.UserCircle)
-                { ForeColor = SystemColors.ButtonFace, Size = 80 });
+                try
+                {
+                    RegistryConfig.userImage = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.UserCircle)
+                    { ForeColor = SystemColors.ButtonFace, Size = 80 });
+                }
+                catch (Exception ex)
+                {
+                    RegistryConfig.userImage = Properties.Resources.icon_profile;
+                    Log.LogData("Error in Loading FontAwesome icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                }
                 isAvailable = false;
             }
             pbAvatar.Image = RegistryConfig.userImage;

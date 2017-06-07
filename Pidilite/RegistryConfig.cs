@@ -49,12 +49,13 @@ namespace Pidilite
 
         
         }
-
         public static string registryName = @"SOFTWARE\Pidilite\PidiliteConfig";
         public static string serverName { get; set; }
         public static string serverUser { get; set; }
         public static string serverPwd { get; set; }
         public static string database { get; set; }
+        public static Int64 userId { get; set; }
+        public static Int64 OrgId { get; set; }
         public static bool isRegEmpty = true;
         public static bool LoadRegValues()
         {

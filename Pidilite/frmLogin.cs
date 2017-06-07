@@ -175,6 +175,7 @@ namespace Pidilite
                             FirstName = Convert.ToString(respJson["firstname"]);
                             LastName = Convert.ToString(respJson["lastname"]);
                             DbName = Convert.ToString(respJson["dbName"]);
+                            RegistryConfig.userId = Convert.ToInt64(respJson["id"]);
                             isHide = true;
 
                         }
@@ -231,10 +232,18 @@ namespace Pidilite
                                 if (oDetails.Photo != null )
                                 userPhoto =RegistryConfig.ByteToImage( oDetails.Photo);
                                 else
-                                    userPhoto = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.User)
+                                    try
+                                    {
+                                        userPhoto = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.User)
+                            
                                     { ForeColor = SystemColors.ButtonFace, Size = 150 });
                                 frmMaster oMaster = new frmMaster(FirstName+" "+LastName,userPhoto);
-
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                                        userPhoto = Properties.Resources.icon_profile ;
+                                    }
                                 isHide = true;
                             }
                             else if (Convert.ToInt64(vOpcode.Value) == -1)

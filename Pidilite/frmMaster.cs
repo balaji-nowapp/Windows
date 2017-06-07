@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
 
 namespace Pidilite
 {
@@ -17,12 +18,23 @@ namespace Pidilite
     {
         #region [Data Members]
         FlowLayoutPanel oExisting = null;
-        string panelDetail = string.Empty, clickedBtn = string.Empty;
+        string panelDetail = string.Empty, clickedBtn = string.Empty, table = string.Empty;
         FontAwesome.Type type;
         Control ctrl = new Control();
         Label lbl = new Label();
         CirclePictureBox pbUpload = new CirclePictureBox();
+        JArray jForm = null;
         public dynamic respJson { get; set; }
+        Dictionary<string, JObject> linkDic = null;
+        Dictionary<string, JArray> calcDic = null;
+        Dictionary<string, JArray> subCalcDic = null;
+        Dictionary<string, Object> hiddenField = null;
+        Dictionary<string, Object> formulaHiddenField = null;
+        Dictionary<string, string> subGridLink = null;
+        List<string> gstCal = null;
+        int count = 0,rowIndexVal =0;
+        Button btnCreate;
+
         #endregion
 
         #region[Constructor]
@@ -34,8 +46,17 @@ namespace Pidilite
             lblUserName.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             pbAvatar.Image = userImage;
             pbAvatar.BackColor = pnlCentre.BackColor;
-            btnModule.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Refresh)
-            { ForeColor = Color.White, Size = 16 });
+            try
+            {
+                btnModule.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Refresh)
+                { ForeColor = Color.White, Size = 16 });
+            }
+
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                btnModule.Image = Properties.Resources.icon_Refresh;
+            }
             opPreparemenu();
         }
         #endregion
@@ -43,13 +64,10 @@ namespace Pidilite
         #region[Form Load]
         private void frmMaster_Load(object sender, EventArgs e)
         {
-
             Application.DoEvents();
             Left = Top = 0;
             MaximizedBounds = Screen.FromHandle(Handle).WorkingArea;
             WindowState = FormWindowState.Maximized;
-
-
         }
         #endregion
 
@@ -57,7 +75,7 @@ namespace Pidilite
         private void lblClose_Click(object sender, EventArgs e)
         {
             Close();
-        }      
+        }
         private void lblMinimize_Click(object sender, EventArgs e)
         {
             WindowState = FormWindowState.Minimized;
@@ -79,7 +97,7 @@ namespace Pidilite
             List<menuDetails> oReturn = new List<menuDetails>();
             try
             {
-               //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
+                //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
                 using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
                 {
                     con.Open();
@@ -135,10 +153,18 @@ namespace Pidilite
                 logo = logo.Replace("fa-", "");
                 logo = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(logo);
                 logo = logo.Replace("-", "");
-                type = new FontAwesome.Type();
-                type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), logo);
-                btnMenu.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
-                { ForeColor = Color.FromArgb(((byte)(107)), ((byte)(130)), ((byte)(153))), Size = 18 });
+                try
+                {
+                    type = new FontAwesome.Type();
+                    type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), logo);
+                    btnMenu.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
+                    { ForeColor = Color.FromArgb(((byte)(107)), ((byte)(130)), ((byte)(153))), Size = 18 });
+                }
+                catch (Exception ex)
+                {
+                    Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                    btnMenu.Image = Properties.Resources.icon_pencil;
+                }
                 btnMenu.Tag = logo;
                 btnMenu.ImageAlign = ContentAlignment.TopLeft;
                 btnMenu.TextAlign = ContentAlignment.MiddleLeft;
@@ -175,9 +201,18 @@ namespace Pidilite
             if (clickedBtn != button.Name)
             {
                 oParent = (button.Parent as FlowLayoutPanel);
-                type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), button.Tag.ToString());
-                button.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
-                { ForeColor = Color.FromArgb(((byte)(107)), ((byte)(130)), ((byte)(153))), Size = 18 });
+                try
+                {
+                    type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), button.Tag.ToString());
+                    button.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
+                    { ForeColor = Color.FromArgb(((byte)(107)), ((byte)(130)), ((byte)(153))), Size = 18 });
+                }
+                catch (Exception ex)
+                {
+                    Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                    button.Image = Properties.Resources.icon_pencil;
+                }
+
                 button.BackColor = Color.FromArgb(((byte)(24)), ((byte)(40)), ((byte)(56)));
                 button.ForeColor = Color.FromArgb(((byte)(107)), ((byte)(130)), ((byte)(153)));
                 PictureBox pb1 = new PictureBox();
@@ -193,9 +228,19 @@ namespace Pidilite
             var button = (Button)sender;
             if (clickedBtn != button.Name)
             {
-                type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), button.Tag.ToString());
-                button.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
-                { ForeColor = Color.White, Size = 18 });
+                try
+                {
+                    type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), button.Tag.ToString());
+                    button.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
+                    { ForeColor = Color.White, Size = 18 });
+                }
+                catch (Exception ex)
+                {
+                    Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                    button.Image = Properties.Resources.icon_pencil;
+                }
+
+
                 oParent = (button.Parent as FlowLayoutPanel);
                 button.ForeColor = Color.White;
                 button.BackColor = Color.FromArgb(((byte)(17)), ((byte)(30)), ((byte)(43)));
@@ -227,9 +272,18 @@ namespace Pidilite
                     }
                     else
                     {
-                        type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), btn.Tag.ToString());
-                        btn.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
-                        { ForeColor = Color.FromArgb(((byte)(107)), ((byte)(130)), ((byte)(153))), Size = 18 });
+                        try
+                        {
+                            type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), btn.Tag.ToString());
+                            btn.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
+                            { ForeColor = Color.FromArgb(((byte)(107)), ((byte)(130)), ((byte)(153))), Size = 18 });
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                            button.Image = Properties.Resources.icon_pencil;
+                        }
+
                         btn.BackColor = Color.FromArgb(((byte)(24)), ((byte)(40)), ((byte)(56)));
                         btn.ForeColor = Color.FromArgb(((byte)(107)), ((byte)(130)), ((byte)(153)));
                         PictureBox pb2 = new PictureBox();
@@ -263,9 +317,18 @@ namespace Pidilite
                 pb1 = oExisting.Controls.OfType<PictureBox>().ToList()[0];
                 pb1.BackColor = oExisting.BackColor;
                 button.ForeColor = Color.White;
-                type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), button.Tag.ToString());
-                button.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
-                { ForeColor = Color.White, Size = 18 });
+
+                try
+                {
+                    type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), button.Tag.ToString());
+                    button.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
+                    { ForeColor = Color.White, Size = 18 });
+                }
+                catch (Exception ex)
+                {
+                    Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                    button.Image = Properties.Resources.icon_pencil;
+                }
                 button.BackColor = oExisting.BackColor;
                 pb1.Image = Properties.Resources.icon_minus;
 
@@ -302,9 +365,21 @@ namespace Pidilite
                     logo = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(logo);
                     logo = logo.Replace("-", "");
                     btnSubMenu.Tag = logo;
-                    //type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), logo);
-                    //btnSubMenu.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
-                    //{ ForeColor = Color.White, Size = 15 });
+                    try
+                    {
+                        type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), logo);
+                        btnSubMenu.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
+                        { ForeColor = Color.White, Size = 15 });
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                        btnSubMenu.Image = Properties.Resources.icon_pencil;
+                    }
+                }
+                else
+                {
+                    btnSubMenu.Image = Properties.Resources.icon_pencil;
                 }
                 btnSubMenu.Image = Properties.Resources.line_dotted;
                 btnSubMenu.ImageAlign = ContentAlignment.MiddleLeft;
@@ -343,9 +418,19 @@ namespace Pidilite
             int k = 1;
             if (button.Tag != null && Convert.ToString(button.Tag) != "")
             {
-                type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), button.Tag.ToString());
-                pbBreadCrumb.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
-                { ForeColor = SystemColors.ControlDarkDark, Size = 30 });
+
+
+                try
+                {
+                    type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), button.Tag.ToString());
+                    pbBreadCrumb.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
+                    { ForeColor = SystemColors.ControlDarkDark, Size = 30 });
+                }
+                catch (Exception ex)
+                {
+                    Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                    pbBreadCrumb.Image = Properties.Resources.icon_pbPencil;
+                }
             }
             lblBreadCrumb.Text = button.Text.ToUpper();
             lblBreadCrumb.Font = RegistryConfig.myBCFont;
@@ -385,15 +470,23 @@ namespace Pidilite
                     logo = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(logo);
                     logo = logo.Replace("-", "");
                     pnlBox.Tag = logo;
-                    //type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), logo);
-                    //btnSubMenu.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
-                    //{ ForeColor = Color.White, Size = 15 });
-                    type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), logo);
-                    Bitmap bt = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
-                    { ForeColor = Color.White, Size = 30 });
-                    CenterPictureBox(picBoxView, bt);
+                    try
+                    {
+                        type = (FontAwesome.Type)Enum.Parse(typeof(FontAwesome.Type), logo);
+                        Bitmap bt = FontAwesome.Instance.GetImage(new FontAwesome.Properties(type)
+                        { ForeColor = Color.White, Size = 30 });
+                        CenterPictureBox(picBoxView, bt);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                        CenterPictureBox(picBoxView, Properties.Resources.icon_Cubes);
+                    }
                 }
-
+                else
+                {
+                    CenterPictureBox(picBoxView, Properties.Resources.icon_Cubes);
+                }
                 pnlBox.Anchor = (AnchorStyles.Top | AnchorStyles.Left);
                 pnlBox.Margin = new Padding(60, 25, 60, 5);
                 fpnlBox.Margin = new Padding(0, 0, 0, 60);
@@ -493,12 +586,12 @@ namespace Pidilite
             oDataGrid.EnableHeadersVisualStyles = true;
             oDataGrid.ColumnHeadersHeight = 40;
             oDataGrid.CellBorderStyle = DataGridViewCellBorderStyle.None;
-        }        
-       
+        }
+
         public DataTable opGridDataByModule(string queryString)
         {
             DataTable oGridData = new DataTable();
-           //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
+            //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
             using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
             {
                 con.Open();
@@ -532,8 +625,18 @@ namespace Pidilite
             btnSearch.Height = 26;
             btnSearch.Width = 40;
             btnSearch.BackColor = Color.FromArgb(((byte)(181)), ((byte)(94)), ((byte)(0)));
-            btnSearch.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Search)
-            { ForeColor = Color.White, Size = 18 });
+
+
+            try
+            {
+                btnSearch.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Search)
+                { ForeColor = Color.White, Size = 18 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                btnSearch.Image = Properties.Resources.icon_Search;
+            }
             btnSearch.FlatAppearance.BorderSize = 0;
             btnSearch.FlatStyle = FlatStyle.Flat;
             btnSearch.ImageAlign = ContentAlignment.TopCenter;
@@ -551,8 +654,18 @@ namespace Pidilite
             btnDownLoad.Height = 26;
             btnDownLoad.Width = 40;
             btnDownLoad.BackColor = Color.FromArgb(((byte)(2)), ((byte)(154)), ((byte)(207)));
-            btnDownLoad.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Download)
-            { ForeColor = Color.White, Size = 18 });
+
+
+            try
+            {
+                btnDownLoad.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Download)
+                { ForeColor = Color.White, Size = 18 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                btnDownLoad.Image = Properties.Resources.icon_download;
+            }
             btnDownLoad.FlatAppearance.BorderSize = 0;
             btnDownLoad.FlatStyle = FlatStyle.Flat;
             btnDownLoad.ImageAlign = ContentAlignment.TopCenter;
@@ -571,8 +684,17 @@ namespace Pidilite
             btnDelete.Height = 26;
             btnDelete.Width = 40;
             btnDelete.BackColor = Color.FromArgb(((byte)(217)), ((byte)(35)), ((byte)(15)));
-            btnDelete.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.MinusCircle)
-            { ForeColor = Color.White, Size = 18 });
+
+            try
+            {
+                btnDelete.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.MinusCircle)
+                { ForeColor = Color.White, Size = 18 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                btnDelete.Image = Properties.Resources.icon_minus_Circle;
+            }
             btnDelete.FlatAppearance.BorderSize = 0;
             btnDelete.FlatStyle = FlatStyle.Flat;
             btnDelete.ImageAlign = ContentAlignment.TopCenter;
@@ -589,8 +711,17 @@ namespace Pidilite
             btnCreate.Height = 26;
             btnCreate.Width = 40;
             btnCreate.BackColor = Color.FromArgb(((byte)(70)), ((byte)(148)), ((byte)(8)));
-            btnCreate.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.PlusCircle)
-            { ForeColor = Color.White, Size = 18 });
+
+            try
+            {
+                btnCreate.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.PlusCircle)
+                { ForeColor = Color.White, Size = 18 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                btnCreate.Image = Properties.Resources.icon_PlusCircle;
+            }
             btnCreate.FlatAppearance.BorderSize = 0;
             btnCreate.FlatStyle = FlatStyle.Flat;
             btnCreate.ImageAlign = ContentAlignment.TopCenter;
@@ -606,9 +737,33 @@ namespace Pidilite
             oPnlAction.Controls.Add(btnCreate);
         }
 
+
+        private void btnDelete_Click(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+        private void btnDownLoad_Click(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+
         #region [Form Create]
         private void btnCreate_Click(object sender, EventArgs e)
         {
+            gstCal = new List<string>();
+            linkDic = new Dictionary<string, JObject>();
+            calcDic = new Dictionary<string, JArray>();
+            subCalcDic = new Dictionary<string, JArray>();
+            subGridLink = new Dictionary<string, string>();
+            gstCal.Add("nxt_cmn_igst");
+            gstCal.Add("nxt_cmn_cgst");
+            gstCal.Add("nxt_cmn_sgst");
             var btn = (Button)sender;
             Panel oParentPnl = new Panel();
             oParentPnl = (btn.Parent.Parent.Parent as Panel);
@@ -618,13 +773,14 @@ namespace Pidilite
             moduleValues oModuleValues = new moduleValues();
             oModuleValues = opGetModuleDetailsByID(Convert.ToInt16(btn.Tag), true);
             List<formDetails> oFormFields = new List<formDetails>();
-            JArray jForm = JsonConvert.DeserializeObject<dynamic>(oModuleValues.Form);
+            jForm = JsonConvert.DeserializeObject<dynamic>(oModuleValues.Form);
             List<formDetails> fieldDetails = new List<formDetails>();
-
+            table = oModuleValues.TableName;
+            btnCreate = new Button();
+            btnCreate = btn;
             foreach (var obj in jForm)
             {
-                fieldDetails = obj["fields"].ToObject<List<formDetails>>();
-
+                fieldDetails = obj["fields"].ToObject<List<formDetails>>().OrderBy(x => x.sortlist).ToList();
                 FlowLayoutPanel ofpnl = new FlowLayoutPanel();
                 if (Convert.ToString(obj["column"]) == "2")
                 {
@@ -632,9 +788,8 @@ namespace Pidilite
                 }
                 else
                 {
-                    opFormFormation(btn, oParentPnl, fieldDetails, obj, ofpnl);
+                    opFormFormation(btn, oParentPnl, fieldDetails, obj, ofpnl, Convert.ToInt16(obj["moduleid"]));
                 }
-
             }
             Panel oPnlCreate = new Panel();
             oPnlCreate.BackColor = Color.White;
@@ -642,7 +797,7 @@ namespace Pidilite
             oPnlCreate.Height = 100;
             FlowLayoutPanel ofnlCreate = new FlowLayoutPanel();
             ofnlCreate.Anchor = (AnchorStyles.Right | AnchorStyles.Top);
-            ofnlCreate.Location = new Point((oPnlCreate.Bounds.Width - 10) - ofnlCreate.Width, 0); ;
+            ofnlCreate.Location = new Point((oPnlCreate.Bounds.Width - 10) - ofnlCreate.Width, 0);
             ofnlCreate.FlowDirection = FlowDirection.LeftToRight;
             ofnlCreate.AutoSize = true;
             Button btnSave = new Button();
@@ -650,8 +805,16 @@ namespace Pidilite
             btnSave.Text = " Save & Continue";
             btnSave.Font = RegistryConfig.myFontBold;
             btnSave.AutoSize = true;
-            btnSave.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.CheckCircleO)
-            { ForeColor = Color.White, Size = 17 });
+            try
+            {
+                btnSave.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.CheckCircleO)
+                { ForeColor = Color.White, Size = 17 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                btnSave.Image = Properties.Resources.icon_Check;
+            }
             btnSave.TextAlign = ContentAlignment.MiddleCenter;
             btnSave.ImageAlign = ContentAlignment.TopCenter;
             btnSave.TextImageRelation = TextImageRelation.ImageBeforeText;
@@ -664,8 +827,17 @@ namespace Pidilite
             btnClose.Text = " Save & Close";
             btnClose.Font = RegistryConfig.myFontBold;
             btnClose.AutoSize = true;
-            btnClose.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.FloppyO)
-            { ForeColor = Color.White, Size = 17 });
+
+            try
+            {
+                btnClose.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.FloppyO)
+                { ForeColor = Color.White, Size = 17 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                btnClose.Image = Properties.Resources.icon_Floppy;
+            }
             btnClose.TextAlign = ContentAlignment.MiddleCenter;
             btnClose.ImageAlign = ContentAlignment.MiddleCenter;
             btnClose.TextImageRelation = TextImageRelation.ImageBeforeText;
@@ -678,8 +850,16 @@ namespace Pidilite
             btnBack.Text = " Back";
             btnBack.Font = RegistryConfig.myFontBold;
             btnBack.AutoSize = true;
-            btnBack.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.ArrowCircleOLeft)
-            { ForeColor = Color.White, Size = 17 });
+            try
+            {
+                btnBack.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.ArrowCircleOLeft)
+                { ForeColor = Color.White, Size = 17 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                btnBack.Image = Properties.Resources.icon_ArrowCircle;
+            }
             btnBack.TextAlign = ContentAlignment.MiddleCenter;
             btnBack.ImageAlign = ContentAlignment.MiddleCenter;
             btnBack.TextImageRelation = TextImageRelation.ImageBeforeText;
@@ -689,13 +869,12 @@ namespace Pidilite
             ofnlCreate.Controls.Add(btnBack);
             oPnlCreate.Controls.Add(ofnlCreate);
             oParentPnl.Controls.Add(oPnlCreate);
-
         }
         public moduleValues opGetModuleDetailsByID(int moduleId, bool isForm)
         {
             moduleValues oValues = null;
             DataTable dt = new DataTable();
-           //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
+            //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
             using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
             {
                 con.Open();
@@ -730,7 +909,6 @@ namespace Pidilite
             ofpBack.BackColor = SystemColors.ButtonFace;
             ofpBack.AutoScroll = true;
             oParentPnl.Controls.Add(ofpBack);
-
             TableLayoutPanel tPanel = new TableLayoutPanel();
             tPanel.ColumnCount = 2;
             tPanel.Width = oParentPnl.Width - 47;
@@ -743,35 +921,42 @@ namespace Pidilite
                 oHeader.BackColor = SystemColors.ControlLight;
                 oHeader.Anchor = (AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right);
                 ofpBack.Controls.Add(oHeader);
-
                 Label lblHeader = new Label();
                 lblHeader.Font = RegistryConfig.myHeaderFont;
                 lblHeader.Text = string.Concat(Convert.ToString(obj["title"]).Select(c => char.IsUpper(c) ? " " + c.ToString() : c.ToString())).TrimStart();
                 lblHeader.AutoSize = true;
                 oHeader.Controls.Add(lblHeader);
             }
+            List<formDetails> valueList = new List<Pidilite.formDetails>();
+            List<formDetails> hidddenList = new List<Pidilite.formDetails>();
+            valueList = fieldDetails.Where(item => item.type != "hidden" && item.type != "formula_hidden").ToList();
+            hidddenList = fieldDetails.Where(item => item.type == "hidden" || item.type == "formula_hidden").ToList();
+            fieldDetails = new List<Pidilite.formDetails>();
+            fieldDetails = fieldDetails.Concat(valueList)
+                                    .Concat(hidddenList)
+                                    .ToList();
 
-            string[] strLabels = fieldDetails.Where(x => x.view == "1").Select(x => x.label).ToArray();
+
             int r = 0, r2 = 0;
             foreach (var detail in fieldDetails)
             {
 
-                if (detail.type != "hidden" && detail.type != "formula_hidden" && detail.view == "1")
+                if (detail.view == "1")
                 {
                     lbl = new Label();
                     lbl.Text = detail.label;
+                    if (detail.type == "hidden" || detail.type == "formula_hidden")
+                    {
+                        lbl.Visible = false;
+                    }
                     if (detail.required == "required")
                         lbl.Text = lbl.Text + '*';
                     lbl.Font = RegistryConfig.myFont;
                     lbl.AutoSize = true;
-                    ctrl = opDynamiccontrolSelection(btn, pbUpload, ctrl, detail);
-
+                    ctrl = opDynamicControlSelection(btn, pbUpload, ctrl, detail);
                     if (detail.label != "")
                     {
-                        if (detail.fieldWidth == "")
-                            tPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Convert.ToSingle(ofpBack.Width / 2)));
-                        else
-                            tPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Convert.ToSingle(ofpBack.Width / 2)));
+                        tPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Convert.ToSingle(ofpBack.Width / 2)));
                     }
 
                     if (Convert.ToString(obj["title"]) == "cmntotalblock")
@@ -824,7 +1009,7 @@ namespace Pidilite
                         {
                             if (detail.label != "")
                             {
-                                tPanel.Controls.Add(lbl, 0, r2);
+                                tPanel.Controls.Add(lbl, 1, r2);
                                 r2++;
                             }
 
@@ -838,6 +1023,7 @@ namespace Pidilite
 
                         }
                     }
+
                     if (detail.fieldWidth == "")
                     {
                         if (detail.type == "file")
@@ -853,22 +1039,94 @@ namespace Pidilite
                         ctrl.Width = tPanel.GetColumnWidths()[pos.Column] * Convert.ToInt32(detail.fieldWidth) / 100;
                     }
                 }
+                tPanel.Controls.Find(detail.field, true);
             }
 
             ofpBack.Controls.Add(tPanel);
             ofpBack.AutoSize = true;
         }
-        private Control opDynamiccontrolSelection(Button btn, CirclePictureBox pbUpload, Control ctrl, formDetails detail)
+        private Control opDynamicControlSelection(Button btn, CirclePictureBox pbUpload, Control ctrl, formDetails detail, bool isSubGrid = false)
         {
             switch (Convert.ToString(detail.type))
             {
+                case "autoNumber":
+                    ctrl = new TextBox();
+                    if (detail.wreadonly == true)
+                        (ctrl as TextBox).Font = RegistryConfig.myFont;
+                    JObject jAutoNo = detail.auto;
+                    int i = 0;
+                    DataTable dt = new DataTable();
+                    int totaldigit = 0, num;
+                    string autoNumber = string.Empty;
+                    string[] dateArr = jAutoNo["autoDate"].ToObject<string[]>();
+                    if (dateArr.Length == 1)
+                    {
+                        i = 0;
+                    }
+                    else if (dateArr.Length > 1)
+                    {
+                        for (int k = 0; k < dateArr.Length; k++)
+                        {
+
+                            if (Convert.ToDateTime(dateArr[k]) < System.DateTime.Now)
+                            {
+                                i = k;
+                            }
+
+                        }
+                    }
+                    if (dateArr.Length != 0)
+                    {
+
+                        string start = jAutoNo["autoFillzero"].ToObject<string[]>()[i];
+
+                        dt = getPreviousAutoNumber(table, detail.field);
+                        totaldigit = Convert.ToInt32(jAutoNo["autoDigits"].ToObject<string[]>()[i]);
+                        if (dt.Rows.Count == 0)
+                        {
+
+
+                            if (jAutoNo["autoFillzero"].ToObject<string[]>()[i] == "1")
+                            {
+                                start = (Convert.ToInt32(start).ToString("D" + totaldigit.ToString()));
+
+                            }
+                            autoNumber = jAutoNo["autoPrex"].ToObject<string[]>()[i] + start + jAutoNo["autoSufx"].ToObject<string[]>()[i];
+                        }
+                        else
+                        {
+
+                            if (Convert.ToDateTime(dt.Rows[0]["CreatedDate"]) < Convert.ToDateTime(dateArr[i]))
+                            {
+                                autoNumber = jAutoNo["autoPrex"].ToObject<string[]>()[i] + start + jAutoNo["autoSufx"].ToObject<string[]>()[i];
+                            }
+                            else
+                            {
+                                autoNumber = Convert.ToString(dt.Rows[0]["Id"]).Replace(jAutoNo["autoPrex"].ToObject<string[]>()[i], "");
+                                autoNumber = autoNumber.Replace(jAutoNo["autoSufx"].ToObject<string[]>()[i], "");
+                                if (int.TryParse(autoNumber, out num))
+                                {
+                                    autoNumber = (Convert.ToInt32(autoNumber) + 1).ToString();
+                                    autoNumber = (Convert.ToInt32(autoNumber).ToString("D" + totaldigit.ToString()));
+                                    autoNumber = jAutoNo["autoPrex"].ToObject<string[]>()[i] + autoNumber + jAutoNo["autoSufx"].ToObject<string[]>()[i];
+                                }
+                                else
+                                {
+                                    autoNumber = jAutoNo["autoPrex"].ToObject<string[]>()[i] + start + jAutoNo["autoSufx"].ToObject<string[]>()[i];
+                                }
+                            }
+
+                        }
+                    }
+                    break;
                 case "text":
                 case "string":
                 case "formula_string":
                 case "normal_string":
                 case "number":
-                case "autoNumber":
                 case "googlelSearch":
+                case "hidden":
+                case "formula_hidden":
 
                     ctrl = new TextBox();
                     ctrl.Name = detail.field;
@@ -877,6 +1135,28 @@ namespace Pidilite
                     {
                         (ctrl as TextBox).ReadOnly = true;
                     }
+                    if (detail.type == "hidden" || detail.type == "formula_hidden")
+                    {
+                        (ctrl as TextBox).Visible = false;
+                    }
+                    if (detail.calc != null && detail.calc.Count != 0)
+                    {
+                        (ctrl as TextBox).Text = "0.00";
+                        if (!(calcDic.ContainsKey(detail.field)))
+                        {
+                            calcDic.Add(detail.field, detail.calc);
+                            if (isSubGrid == true)
+                                subCalcDic.Add(detail.field, detail.calc);
+                        }
+                        (ctrl as TextBox).TextAlign = HorizontalAlignment.Right;
+                        (ctrl as TextBox).ReadOnly = true;
+
+                    }
+                    if (detail.type == "formula_hidden" || detail.type == "number" || detail.type == "formula_string")
+                    {
+                        (ctrl as TextBox).TextAlign = HorizontalAlignment.Right;
+                    }
+                    (ctrl as TextBox).TextChanged += new EventHandler(ctrl_TextChanged);
                     break;
                 case "text_date":
                     ctrl = new DateTimePicker();
@@ -899,6 +1179,7 @@ namespace Pidilite
                     {
                         (ctrl as DateTimePicker).Enabled = true;
                     }
+
                     break;
                 case "textarea":
                 case "textarea_editor":
@@ -909,33 +1190,45 @@ namespace Pidilite
                     {
                         (ctrl as RichTextBox).ReadOnly = true;
                     }
+
                     break;
                 case "select":
                     ctrl = new ComboBox();
-                    //ctrl.Click += new EventHandler(ctrl_Click);
                     ctrl.Tag = btn.Tag;
                     ctrl.Name = detail.field;
                     ctrl.Font = RegistryConfig.myFont;
+                    string condition = String.Empty;
                     if (Convert.ToString(detail.option["opt_type"]) == "external")
                     {
+
+                        RegistryConfig.OrgId = 16;
+                        condition = Convert.ToString(detail.option["lookup_dependency_key"]).Replace(':', '=');
+                        condition = condition.Replace("{user_id}", Convert.ToString(RegistryConfig.userId));
+                        condition = condition.Replace("{org_id}", Convert.ToString(RegistryConfig.OrgId));
                         TableDetails oDetails = new TableDetails();
                         oDetails.TableName = Convert.ToString(detail.option["lookup_table"]);
                         oDetails.Key = Convert.ToString(detail.option["lookup_key"]);
                         oDetails.Value = Convert.ToString(detail.option["lookup_value"]);
+                        oDetails.Condition = condition;
                         DataTable cbValues = new DataTable();
                         cbValues = comboBoxValues(oDetails);
-
                         DataRow dr = cbValues.NewRow();
                         dr["Value"] = "--Select--";
                         dr["Id"] = -1;
-
                         cbValues.Rows.InsertAt(dr, 0);
                         (ctrl as ComboBox).DisplayMember = "Value";
                         (ctrl as ComboBox).ValueMember = "Id";
                         (ctrl as ComboBox).DataSource = cbValues;
+                        if (detail.links != null && detail.links.ToString() != "{}")
+                        {
+                            if (!(linkDic.ContainsKey(detail.field)))
+                                linkDic.Add(detail.field, detail.links);
+                            (ctrl as ComboBox).SelectedIndexChanged += new EventHandler(ctrl_SelectedIndexChanged);
 
+                        }
 
                     }
+
                     else if (Convert.ToString(detail.option["opt_type"]) == "datalist")
                     {
                         string[] option = Convert.ToString(detail.option["lookup_query"]).Split('|');
@@ -945,10 +1238,29 @@ namespace Pidilite
                             string[] optionVal = opt.Split(':');
                             (ctrl as ComboBox).Items.Add((new Item(optionVal[1], optionVal[0])));
                         }
-
-
                     }
-                                           (ctrl as ComboBox).DropDownHeight = 100;
+                    else if (Convert.ToString(detail.option["opt_type"]).StartsWith("angular"))
+                    {
+                        DataTable cbValues = new DataTable();
+                        cbValues.Columns.Add("name");
+                        cbValues.Columns.Add("id");
+                        DataRow dr = cbValues.NewRow();
+                        dr["name"] = "--Select--";
+                        dr["id"] = -1;
+                        cbValues.Rows.InsertAt(dr, 0);
+                        (ctrl as ComboBox).DisplayMember = "name";
+                        (ctrl as ComboBox).ValueMember = "id";
+                        (ctrl as ComboBox).DataSource = cbValues;
+                        if (detail.links != null && detail.links.ToString() != "{}")
+                        {
+
+                            linkDic.Add(detail.field, detail.links);
+                            (ctrl as ComboBox).SelectedIndexChanged += new EventHandler(ctrl_SelectedIndexChanged);
+
+                        }
+                    }
+
+                    (ctrl as ComboBox).DropDownHeight = 100;
                     if (detail.wreadonly == true)
                     {
                         (ctrl as ComboBox).Enabled = false;
@@ -984,8 +1296,17 @@ namespace Pidilite
                     pbUpload.Height = 45;
                     pbUpload.Width = 33;
                     pbUpload.BackColor = SystemColors.ButtonFace;
-                    pbUpload.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Camera)
-                    { ForeColor = Color.Gray });
+                    try
+                    {
+                        pbUpload.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Camera)
+                        { ForeColor = Color.Gray });
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                        pbUpload.Image = Properties.Resources.icon_PlusCircle;
+                    }
+
                     ctrl.Controls.Add(txt);
                     ctrl.Controls.Add(upload);
                     ctrl.Name = detail.field;
@@ -1000,14 +1321,141 @@ namespace Pidilite
                     {
                         (ctrl as TextBox).ReadOnly = true;
                     }
+
                     break;
-
-
             }
-
             return ctrl;
         }
-        private void opFormFormation(Button btn, Panel oParentPnl, List<formDetails> fieldDetails, JToken obj, FlowLayoutPanel ofpnl)
+        private void ctrl_TextChanged(object sender, EventArgs e)
+        {
+           
+            string equation = string.Empty, value = string.Empty, fields = string.Empty, fValue = string.Empty;
+            string[] sFields = null;
+            int rowIndex = 0;
+            int getVal = 0;
+            var key = (TextBox)sender;
+            if (key.Text == "")
+                key.Text = "0";
+            foreach (var obj in calcDic)
+            {
+                value = string.Empty;
+                string[] val = obj.Value.ToObject<string[]>();
+                if (val.Contains(key.Name))
+                {
+                    equation = string.Join(",", val);
+                    equation = equation.Replace(key.Name, key.Text);
+                    fields = Regex.Replace(Regex.Replace(equation, "[\\\\/]", "-"), @"[^a-zA-Z\.,_]", string.Empty);
+                    sFields = fields.Split(',');
+                    sFields = sFields.Where(s => s != "").ToArray();
+                    equation = equation.Replace(",", "");
+                 
+                        foreach (var ctrl in sFields)
+                    {
+                        Control[] fld = this.Controls.Find(ctrl.ToString(), true); 
+                       
+                        if (fld != null && fld.Length > 0)
+                        {
+                            if (key.Parent != null && key.Parent.GetType().Name.ToLower() == "tablelayoutpanel" && ((TableLayoutPanel)key.Parent).ColumnCount > 2)
+                            {
+                                var tbpnl = ((TableLayoutPanel)key.Parent);
+                                rowIndex= tbpnl.GetCellPosition(key).Row;
+
+                                int i = 0;
+                                foreach ( var item in fld)
+                                {
+                                   if ( tbpnl.GetCellPosition(item).Row == rowIndex)
+                                    {
+                                        getVal = i;
+                                    }
+                                    i++;
+                                }
+                                if ((fld[getVal] as TextBox).Text == "")
+                                    fValue = "0";
+                                else
+                                    fValue = (fld[getVal] as TextBox).Text;
+
+                            }
+                            else
+                            {
+                                if ((fld[0] as TextBox).Text == "")
+                                    fValue = "0";
+                                else
+                                    fValue = (fld[0] as TextBox).Text;
+                            }
+                            
+                            equation = equation.Replace(ctrl.ToString(), fValue);
+                        }
+                    }
+                    string[] eqn = equation.Split(')');
+                    foreach (var item in eqn)
+                    {
+                        string val1 = "";
+                        val1 = item.ToString ();
+                        DataTable dtCalc = new DataTable();
+                        if (val1.Contains('('))
+                        {
+                            if (val1.Contains("(("))
+                            val1 = val1 + "))";
+                            else
+                                val1 = val1 + ")";
+                            if (val1.Contains("Math.round"))
+                            {
+                                val1 = val1.Replace("Math.round", "");
+                                val1 = val1.Replace(",", "");
+                                var objValue = dtCalc.Compute(val1, "");
+                                val1 = objValue.ToString();
+                                val1 = Math.Round(Convert.ToDecimal(val1)).ToString();
+                                value = value + val1;
+                            }
+                            else
+                            {
+                                val1 = val1.Replace(",", "");
+                                var objValue1 = dtCalc.Compute(val1, "");
+                                val1 = objValue1.ToString();
+                                value = value + val1;
+                            }
+                        }
+                        else
+                        {
+
+
+                            val1 = value + val1;
+                            val1 = val1.Replace(",", "");
+                            var objValue2 = dtCalc.Compute(val1, "");
+                            val1 = objValue2.ToString();
+                            value = val1;
+                        }
+                    }
+                  
+                   
+                    if (val.Length ==1)
+                    {
+                        Control[] calcArray = this.Controls.Find(val[0], true);
+                        if (calcArray.Length >1 )
+                        {
+                            decimal  iTotal = 0;
+                            value = "0";
+                           foreach (var item in calcArray)
+                            {
+                                iTotal = iTotal+Convert.ToDecimal(item.Text );
+                            }
+                            value = iTotal.ToString ();
+                        }
+                    }
+                 
+                    Control[] calc1 = this.Controls.Find(obj.Key, true);
+                    if (calc1 != null && calc1.Length > 0)
+                    {
+                       if( calc1.Length == 1)
+                            (calc1[0] as TextBox).Text = Convert.ToDecimal(value).ToString("N2");// decimal with 2 places
+                        else
+                            (calc1[getVal] as TextBox).Text = Convert.ToDecimal(value).ToString("N2");// decimal with 2 places 
+                    }
+
+                }
+            }
+        }
+        private void opFormFormation(Button btn, Panel oParentPnl, List<formDetails> fieldDetails, JToken obj, FlowLayoutPanel ofpnl, Int16 moduleID = 0)
         {
             Panel opnlBack = new Panel();
             opnlBack.Width = oParentPnl.Width - 40;
@@ -1026,7 +1474,6 @@ namespace Pidilite
                 oHeader.BackColor = SystemColors.ControlLight;
                 oHeader.Anchor = (AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right);
                 ofpnl.Controls.Add(oHeader);
-
                 Label lblHeader = new Label();
                 lblHeader.Font = RegistryConfig.myHeaderFont;
                 lblHeader.Text = string.Concat(Convert.ToString(obj["title"]).Select(c => char.IsUpper(c) ? " " + c.ToString() : c.ToString())).TrimStart();
@@ -1035,7 +1482,7 @@ namespace Pidilite
             }
             if (Convert.ToInt32(obj["isSubGrid"]) == 1)
             {
-                opSubGridControlFormations(btn, oParentPnl, fieldDetails, ofpnl);
+                opSubGridControlFormations(btn, oParentPnl, fieldDetails, ofpnl, moduleID);
             }
             else
             {
@@ -1043,35 +1490,55 @@ namespace Pidilite
 
             }
         }
-        private void opSubGridControlFormations(Button btn, Panel oParentPnl, List<formDetails> fieldDetails, FlowLayoutPanel ofpnl)
+        private void opSubGridControlFormations(Button btn, Panel oParentPnl, List<formDetails> fieldDetails, FlowLayoutPanel ofpnl, Int16 moduleID)
         {
-            ofpnl.FlowDirection = FlowDirection.LeftToRight;
-            ofpnl.Width = oParentPnl.Width - 40;         
-            ofpnl.WrapContents = false;
+      
+            ofpnl.FlowDirection = FlowDirection.TopDown;
+            ofpnl.Width = oParentPnl.Width - 40;
             TableLayoutPanel tblPnl = new TableLayoutPanel();
-            tblPnl.AutoSize = true;
-            string[] strLabels = fieldDetails.Where(x => x.view == "1").Select(x => x.label).ToArray();
+            tblPnl.Width = ofpnl.Width;
+            tblPnl.VerticalScroll.Maximum = 0;
+            tblPnl.AutoScroll = true;
+            tblPnl.Tag = 2;
             int c = 0;
+            tblPnl.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            tblPnl.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             foreach (var detail in fieldDetails)
             {
-
-                if (detail.type != "hidden" && detail.type != "formula_hidden" && detail.view == "1")
+                bool has = gstCal.Contains(detail.field);
+                if (has == true)
+                {
+                    count++;
+                }
+                if (detail.view == "1")
                 {
                     lbl = new Label();
                     lbl.Text = detail.label;
+                    if (detail.type == "hidden" || detail.type == "formula_hidden")
+                    {
+                        lbl.Visible = false;
+                    }
                     if (detail.required == "required")
                         lbl.Text = lbl.Text + '*';
                     lbl.Font = RegistryConfig.myFont;
                     lbl.AutoSize = true;
-                    ctrl = opDynamiccontrolSelection(btn, pbUpload, ctrl, detail);
-                    tblPnl.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-                    if (detail.fieldWidth == "")
+                    ctrl = opDynamicControlSelection(btn, pbUpload, ctrl, detail, true);
+
+
+                    if (detail.type != "hidden" && detail.type != "formula_hidden")
                     {
-                        tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 250F));
+                        if (detail.fieldWidth == "")
+                        {
+                            tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200F));
+                        }
+                        else
+                        {
+                            tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, float.Parse(detail.fieldWidth)));
+                        }
                     }
                     else
                     {
-                        tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+                        tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 0F));
                     }
                     tblPnl.Controls.Add(lbl, c, 0);
                     tblPnl.Controls.Add(ctrl, c, 1);
@@ -1081,39 +1548,312 @@ namespace Pidilite
                     }
                     else
                     {
-                        TableLayoutPanelCellPosition pos = tblPnl.GetCellPosition(ctrl);
-                        ctrl.Width = tblPnl.GetColumnWidths()[pos.Column] * Convert.ToInt32(detail.fieldWidth) / 100;
+                        if (detail.type != "hidden" && detail.type != "formula_hidden")
+                        {
+                            ctrl.Width = Convert.ToInt32(detail.fieldWidth);
+                        }
+                        else
+                        {
+                            ctrl.Width = 0;
+                        }
                     }
-                    tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+
+                    c++;
+                }
+
+            }
+            tblPnl.ColumnCount = fieldDetails.Count;
+            tblPnl.RowCount = Convert.ToInt32(tblPnl.Tag);
+            tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50F));
+            PictureBox pbDelete = new PictureBox();
+            pbDelete.Dock = DockStyle.Right;
+            try
+            {
+                pbDelete.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.TrashO)
+                { ForeColor = Color.DarkGray, Size = 18 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                pbDelete.Image = Properties.Resources.icon_trash;
+            }
+            tblPnl.ColumnCount = tblPnl.ColumnCount + 1;
+            pbDelete.Click += new EventHandler(pbDelete_Click);
+            tblPnl.Controls.Add(pbDelete, c, 1);
+            tblPnl.Width = ofpnl.Width;
+            ofpnl.Controls.Add(tblPnl);
+            Button btnAddNew = new Button();
+            btnAddNew.UseMnemonic = false;
+            btnAddNew.Text = " New Item";
+            btnAddNew.Font = RegistryConfig.myFontBold;
+            btnAddNew.AutoSize = true;
+            try
+            {
+                btnAddNew.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Plus)
+                { ForeColor = Color.White, Size = 12 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                btnAddNew.Image = Properties.Resources.icon_plus;
+            }
+
+            btnAddNew.TextAlign = ContentAlignment.TopCenter;
+            btnAddNew.ImageAlign = ContentAlignment.MiddleCenter;
+            btnAddNew.TextImageRelation = TextImageRelation.ImageBeforeText;
+            btnAddNew.BackColor = SystemColors.HotTrack;
+            btnAddNew.ForeColor = Color.White;
+            btnAddNew.FlatStyle = FlatStyle.Flat;
+            btnAddNew.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnAddNew.Dock = DockStyle.Right;
+            btnAddNew.Tag = moduleID;
+            btnAddNew.Click += new EventHandler(btnAddNew_Click);
+            Panel pnlBtn = new Panel();
+            pnlBtn.Height = btnAddNew.Height;
+            pnlBtn.BackColor = SystemColors.ButtonFace;
+            pnlBtn.Width = ofpnl.Width - 35;
+            pnlBtn.Controls.Add(btnAddNew);
+            ofpnl.Controls.Add(pnlBtn);
+            ofpnl.Parent.Height = ofpnl.Height;
+        }
+
+        private void pbDelete_Click(object sender, EventArgs e)
+        {
+            var pb = (PictureBox)sender;
+            var parentPnl = (TableLayoutPanel)pb.Parent;
+            if (parentPnl.RowCount > 2)
+            {
+                int rowIndex = parentPnl.GetCellPosition(pb).Row;
+                for (int columnIndex = 0; columnIndex < parentPnl.ColumnCount; columnIndex++)
+                {
+                    var control = parentPnl.GetControlFromPosition(columnIndex, rowIndex);
+                    parentPnl.Controls.Remove(control);
+                }
+                Control[] numCtrl = parentPnl.Controls.OfType<TextBox>().ToArray();
+                foreach (var ctrl in numCtrl )
+                {
+                    string valChanged = ctrl.Text;
+                    ctrl.Text = "";
+                    ctrl.Text = valChanged;
+                }
+                parentPnl.RowCount -= 1;
+                parentPnl.Tag = parentPnl.RowCount;
+                parentPnl.Height = parentPnl.Height - 50;
+                parentPnl.Parent.Height = parentPnl.Parent.Height - 50;
+                parentPnl.Parent.Parent.Height = parentPnl.Parent.Height;
+            }
+            else
+            {
+              MessageBox.Show("Form must have at least one row", "Alert", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void btnAddNew_Click(object sender, EventArgs e)
+        {
+            var button = (Button)sender;
+            count = 0;
+            string stateFrom = string.Empty, stateTo = string.Empty, values = string.Empty ;
+            DataTable dt = new DataTable();
+            FlowLayoutPanel oParentPnl = new FlowLayoutPanel();
+            oParentPnl = (button.Parent.Parent as FlowLayoutPanel);
+            Control[] tblCtrl = oParentPnl.Controls.OfType<TableLayoutPanel>().Cast<Control>().ToArray();
+            moduleValues oModuleValues = new moduleValues();
+            oModuleValues = opGetModuleDetailsByID(Convert.ToInt16(button.Tag), true);
+            List<formDetails> oFormFields = new List<formDetails>();
+            jForm = JsonConvert.DeserializeObject<dynamic>(oModuleValues.Form);
+            List<formDetails> fieldDetails = new List<formDetails>();
+            fieldDetails = jForm[0]["fields"].ToObject<List<formDetails>>();
+            TableLayoutPanel tblPnl = new TableLayoutPanel();
+            tblPnl = (TableLayoutPanel)tblCtrl[0];
+            int c = 0;
+            int row = 0;
+            bool isMulti = false;
+            row = (Convert.ToInt32(tblPnl.Tag));
+            rowIndexVal = tblPnl.RowCount+1;
+            foreach (var detail in fieldDetails)
+            {
+                bool has = gstCal.Contains(detail.field);
+                if (has == true)
+                {
+                    count++;
+                }
+                if (detail.view == "1")
+                {
+                    ctrl = opDynamicControlSelection(btnCreate, pbUpload, ctrl, detail, true);
+                    Control[] tbxs = { ctrl };
+                    if (subGridLink.ContainsKey(ctrl.Name))
+                    {
+                   
+                        values = subGridLink.Single(x => x.Key == ctrl.Name).Value;
+                        dt = comboBoxValuesforLinks(values);
+                        linkCtrlValues(ref stateFrom, ref stateTo, dt, isMulti, tbxs);
+                    }
+                   
+                  
+                   
+                    if (detail.type != "hidden" && detail.type != "formula_hidden")
+                    {
+                       if (detail.fieldWidth == "")
+                        {
+                            tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200F));
+                        }
+                        else
+                        {
+                            tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, float.Parse(detail.fieldWidth)));
+                        }
+                    }
+                    else
+                    {
+                        tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 0F));
+                    }
+
+                    tblPnl.Controls.Add(ctrl, c, row);
+                    if (detail.fieldWidth == "")
+                    {
+                        ctrl.Width = 200;
+                    }
+                    else
+                    {
+                        if (detail.type != "hidden" && detail.type != "formula_hidden")
+                        {
+                            ctrl.Width = Convert.ToInt32(detail.fieldWidth);
+                        }
+                        else
+                        {
+                            ctrl.Width = 0;
+                        }
+                    }
+
                     c++;
                 }
             }
-            tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 250F));
-            
+            tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50F));
             PictureBox pbDelete = new PictureBox();
             pbDelete.Dock = DockStyle.Right;
-            pbDelete.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.TrashO)
-            { ForeColor = Color.DarkGray, Size = 18 });
-            tblPnl.Controls.Add(pbDelete, c, 1);
-            ofpnl.Controls.Add(tblPnl);
-            ofpnl.AutoScroll = true;
-          }
+            try
+            {
+                pbDelete.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.TrashO)
+                { ForeColor = Color.DarkGray, Size = 18 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                pbDelete.Image = Properties.Resources.icon_trash;
+            }
+
+            pbDelete.Click += new EventHandler(pbDelete_Click);
+            tblPnl.Controls.Add(pbDelete, c, row);
+            tblPnl.ColumnCount = fieldDetails.Count + 1;
+            tblPnl.Tag = Convert.ToInt32(tblPnl.Tag) + 1;
+            tblPnl.RowCount = Convert.ToInt32(tblPnl.Tag);
+            tblPnl.Width = tblPnl.Parent.Width - 50;
+            tblPnl.Height = tblPnl.Height + 50;
+            oParentPnl.Height = tblPnl.Height + button.Parent.Height;
+            oParentPnl.Parent.Height = oParentPnl.Height;
+        }
+
+        //private void btnAddNew_Click(object sender, EventArgs e)
+        //{
+        //    List<HoldingCell> tempHolding = new List<HoldingCell>();
+        //    HoldingCell cell = default(HoldingCell);
+        //      var button = (Button)sender;
+
+        //    FlowLayoutPanel oParentPnl = new FlowLayoutPanel();
+        //    oParentPnl = (button.Parent.Parent as FlowLayoutPanel);
+        //    Control[] tblCtrl = oParentPnl.Controls.OfType<TableLayoutPanel>().Cast<Control>().ToArray();
+        //    TableLayoutPanel tblPnl = new TableLayoutPanel();
+        //    tblPnl = (TableLayoutPanel)tblCtrl[0];
+        //    tblPnl.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single;
+        //    var _with2 = tblPnl;
+        //    Int32 insertPoint = tblPnl.RowCount;
+        //    for (Int32 row = insertPoint; row <= tblPnl.RowCount+1; row++)
+        //    {
+        //        for (Int32 col = 0; col <= tblPnl.ColumnCount - 1; col++)
+        //        {
+        //            cell = new HoldingCell();
+        //            cell.cntrl = _with2.GetControlFromPosition(col, row-1);
+        //            //setup position for restore = current row + 1 
+        //            cell.pos = new TableLayoutPanelCellPosition(col, row );
+        //            tempHolding.Add(cell);
+        //        }
+        //    }
+
+        //    ////insert new row 
+        //    //_with2.RowStyles.Insert(insertPoint, new RowStyle(SizeType.Absolute, 30f));
+        //    //_with2.RowCount += 1;
+
+        //    //adjust control positions 
+        //    foreach (HoldingCell cell_loopVariable in tempHolding)
+        //    {
+        //        cell = cell_loopVariable;
+        //        if (cell.cntrl != null)
+        //        {
+        //          //  _with2.SetCellPosition(cell.cntrl, cell.pos);
+        //            _with2.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, cell_loopVariable.cntrl.Width));
+        //            _with2.Controls.Add(cell_loopVariable.cntrl, cell_loopVariable.pos.Column, cell_loopVariable.pos.Row);
+
+        //        }
+        //    }
+        //    tempHolding = null;
+        //    //for (Int32 col = 0; col <= tblPnl.ColumnCount - 1; col++)
+        //    //    {
+        //    //        cell = new HoldingCell();
+        //    //        cell.cntrl = tblPnl.GetControlFromPosition(col, 1);
+        //    //        cell.pos = new TableLayoutPanelCellPosition(col, row +1 );
+        //    //        tempHolding.Add(cell);
+        //    //    }
+
+
+
+        //    //////insert new row 
+
+        //    //tblPnl.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        //    ////adjust control positions 
+        //    //foreach (HoldingCell cell_loopVariable in tempHolding)
+        //    //{
+        //    //    //  cell = cell_loopVariable;
+        //    //    if (cell_loopVariable.cntrl != null)
+        //    //    {
+        //    //        tblPnl.SetCellPosition(cell_loopVariable.cntrl, cell_loopVariable.pos);
+        //    //        //tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, cell_loopVariable.cntrl.Width));
+        //    //        //tblPnl.Controls.Add(cell_loopVariable.cntrl, cell_loopVariable.pos.Column, cell_loopVariable.pos.Row);
+
+        //    //    }
+
+        //    //}
+        //    //tblPnl.ColumnCount = fieldDetails.Count + 1;
+        //    //tblPnl.Tag = Convert.ToInt32(tblPnl.Tag) + 1;
+        //    tblPnl.RowCount = Convert.ToInt32(tblPnl.Tag);
+        //    tblPnl.Width = tblPnl.Parent.Width - 50;
+        //    tblPnl.Height = tblPnl.Height + 50;
+        //    oParentPnl.Height = tblPnl.Height + button.Parent.Height;
+        //    oParentPnl.Parent.Height = oParentPnl.Height;
+        //    //tempHolding = null;
+        //}
         private void opControlFormation(Button btn, List<formDetails> fieldDetails, FlowLayoutPanel ofpnl, Panel opnlBack)
         {
             ofpnl.FlowDirection = FlowDirection.TopDown;
+            hiddenField = new Dictionary<string, object>();
+            formulaHiddenField = new Dictionary<string, object>();
             foreach (var detail in fieldDetails)
             {
-                if (detail.type != "hidden" && detail.type != "formula_hidden" && detail.view == "1")
+
+                if (detail.view == "1")
                 {
-                  
-                   lbl = new Label();
+
+                    lbl = new Label();
                     lbl.Text = detail.label;
+                    if (detail.type == "hidden" || detail.type == "formula_hidden")
+                    {
+                        lbl.Visible = false;
+                    }
                     if (detail.required == "required")
                         lbl.Text = lbl.Text + '*';
                     lbl.AutoSize = true;
                     lbl.Font = RegistryConfig.myFont;
                     ofpnl.Controls.Add(lbl);
-                    ctrl = opDynamiccontrolSelection(btn, pbUpload, ctrl, detail);
+                    ctrl = opDynamicControlSelection(btn, pbUpload, ctrl, detail);
                     if (detail.fieldWidth != "")
                         ctrl.Width = opnlBack.Width * Convert.ToInt32(detail.fieldWidth) / 100;
                     else
@@ -1140,13 +1880,311 @@ namespace Pidilite
 
             }
         }
+        private void ctrl_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var ctrl = (ComboBox)sender;
+            string str = string.Empty, moreFields = string.Empty, stateFrom = string.Empty, stateTo = string.Empty;
+            DataTable dt = new DataTable();
+            JObject jobj = linkDic.Single(x => x.Key == ctrl.Name).Value;
+            int c = jobj["ofield"].ToArray().Length;
+            double num = 0;
+            bool isMulti = false;
+           
+
+            if (ctrl.Parent.GetType().Name.ToLower () == "tablelayoutpanel" && ((TableLayoutPanel)ctrl.Parent).ColumnCount>2)
+            {
+                for (int t = 0; t <= c - 1; t++)
+                {
+                    var tbpnl = (TableLayoutPanel)ctrl.Parent;
+                    int rowIndex = tbpnl.GetCellPosition(ctrl).Row;
+                    Control[] tbctrl = tbpnl.Controls.Find(jobj["ofield"][t].ToString(), true);
+                    Control[] tbxs = { tbctrl[rowIndex -1] };
+                    if (tbxs != null && tbxs.Length > 0 && Convert.ToString(jobj["ftable"][t]) != "")
+                    {
+                        qryFormation(ctrl, out str, ref moreFields, jobj, num, ref isMulti, t);
+                       
+                        dt = comboBoxValuesforLinks(str);
+                        linkCtrlValues(ref stateFrom, ref stateTo, dt, isMulti, tbxs);
+                    }
+                }
+            }
+            else
+            {
+                for (int t = 0; t <= c - 1; t++)
+                {
+                    Control[] tbxs = this.Controls.Find(jobj["ofield"][t].ToString(), true);
+                    for (int v = 0; v < tbxs.Length; v++)
+                    {
+                        if (tbxs != null && tbxs.Length > 0 && Convert.ToString(jobj["ftable"][t]) != "")
+                        {
+                            qryFormation(ctrl, out str, ref moreFields, jobj, num, ref isMulti, t);
+                            if (!subGridLink.ContainsKey(tbxs[v].Name))
+                            {
+                                subGridLink.Add(tbxs[v].Name, str);
+                            }
+                            dt = comboBoxValuesforLinks(str);
+                            Control[] loopCtrl = { tbxs[v] };
+                            linkCtrlValues(ref stateFrom, ref stateTo, dt, isMulti, loopCtrl);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void linkCtrlValues(ref string stateFrom, ref string stateTo, DataTable dt, bool isMulti, Control[] tbxs)
+        {
+            if (tbxs[0].GetType().Name == "ComboBox")
+            {
+
+                if (dt.Rows.Count != 0)
+                {
+                    if (isMulti == true || dt.Columns.Count > 1)
+                    {
+                        (tbxs[0] as ComboBox).ValueMember = "id";
+                        (tbxs[0] as ComboBox).DisplayMember = "name";
+                        (tbxs[0] as ComboBox).DataSource = dt;
+                        DataRow dr = dt.NewRow();
+                        dr["name"] = "--Select--";
+                        dr["id"] = -1;
+                        DataRow[] rows = dt.Select("id= -1");
+                        if (rows.Length == 0)
+                        {
+                            dt.Rows.InsertAt(dr, 0);
+                        }
+                       
+                 //   (tbxs[0] as ComboBox).SelectedIndex =1;
+                    }
+               
+                    else
+                    {
+                        (tbxs[0] as ComboBox).SelectedValue  = Convert.ToInt32(dt.Rows[0][0]);
+                    }
+                }
+                else
+                {
+                    (tbxs[0] as ComboBox).ValueMember = "id";
+                    (tbxs[0] as ComboBox).DisplayMember = "name";
+                    (tbxs[0] as ComboBox).DataSource = dt;
+                    DataRow dr = dt.NewRow();
+                    dr["name"] = "--Select--";
+                    dr["id"] = -1;
+                    DataRow[] rows = dt.Select("id= -1");
+                    if (rows.Length == 0)
+                    {
+                        dt.Rows.InsertAt(dr, 0);
+                    }
+                (tbxs[0] as ComboBox).SelectedIndex = 0;
+                }
+
+            }
+
+            else if (tbxs[0].GetType().Name == "RichTextBox")
+            {
+                if (dt.Rows.Count != 0)
+                {
+                    (tbxs[0] as RichTextBox).Text = dt.Rows[0][0].ToString();
+                }
+                else
+                {
+                    (tbxs[0] as RichTextBox).Text = "";
+                }
+            }
+            else if (tbxs[0].GetType().Name == "TextBox")
+            {
+
+                if (count == 3 && (tbxs[0] as TextBox).Name == "nxt_cmn_igst")
+                {
+                    Control[] gst = this.Controls.Find("nxt_state_gst_from", true);
+                    if (gst != null && gst.Length > 0)
+                    {
+                        stateFrom = (gst[0] as TextBox).Text;
+                    }
+                    Control[] ctrl1 = this.Controls.Find("nxt_state_gst_to", true);
+                    if (ctrl1 != null && ctrl1.Length > 0)
+                    {
+                        stateTo = (ctrl1[0] as TextBox).Text;
+                    }
+                    if (stateFrom != stateTo)
+                    {
+                        (tbxs[0] as TextBox).Text = dt.Rows[0][0].ToString();
+                    }
+                    else
+                    {
+                        (tbxs[0] as TextBox).Text = "0";
+                    }
+                }
+                else if (count == 3 && (tbxs[0] as TextBox).Name == "nxt_cmn_cgst")
+                {
+                    Control[] gst = this.Controls.Find("nxt_state_gst_from", true);
+                    if (gst != null && gst.Length > 0)
+                    {
+                        stateFrom = (gst[0] as TextBox).Text;
+                    }
+                    Control[] ctrl1 = this.Controls.Find("nxt_state_gst_to", true);
+                    if (ctrl1 != null && ctrl1.Length > 0)
+                    {
+                        stateTo = (ctrl1[0] as TextBox).Text;
+                    }
+                    if (stateFrom == stateTo)
+                    {
+                        (tbxs[0] as TextBox).Text = dt.Rows[0][0].ToString();
+                    }
+                    else
+                    {
+                        (tbxs[0] as TextBox).Text = "0";
+                    }
+                }
+                else if (count == 3 && (tbxs[0] as TextBox).Name == "nxt_cmn_sgst")
+                {
+                    Control[] gst = this.Controls.Find("nxt_state_gst_from", true);
+                    if (gst != null && gst.Length > 0)
+                    {
+                        stateFrom = (gst[0] as TextBox).Text;
+                    }
+                    Control[] ctrl1 = this.Controls.Find("nxt_state_gst_to", true);
+                    if (ctrl1 != null && ctrl1.Length > 0)
+                    {
+                        stateTo = (ctrl1[0] as TextBox).Text;
+                    }
+                    if (stateFrom == stateTo)
+                    {
+                        (tbxs[0] as TextBox).Text = dt.Rows[0][0].ToString();
+                    }
+                    else
+                    {
+                        (tbxs[0] as TextBox).Text = "0";
+                    }
+                }
+                else if (dt.Rows.Count != 0)
+                {
+                    (tbxs[0] as TextBox).Text = dt.Rows[0][0].ToString();
+                }
+                else
+                {
+                    (tbxs[0] as TextBox).Text = "";
+                }
+            }
+
+            else if (tbxs[0].GetType().Name == "DateTime")
+            {
+                if (dt.Rows.Count != 0)
+                {
+                    (tbxs[0] as DateTimePicker).Text = Convert.ToDateTime(dt.Rows[0][0]).ToString("dd-MM-yyyy", CultureInfo.InvariantCulture);
+                }
+                else
+                {
+                    (tbxs[0] as DateTimePicker).Text = "";
+                }
+            }
+        }
+
+        private static void qryFormation(ComboBox ctrl, out string str, ref string moreFields, JObject jobj, double num, ref bool isMulti, int t)
+        {
+            str = "select  distinct ";
+            if (Convert.ToString(jobj["ffield"][t]) != "")
+            {
+                str = str + Convert.ToString(jobj["ffield"][t]) + " as name , ";
+
+            }
+            if (Convert.ToString(jobj["vfield"][t]) != "")
+            {
+                str = str + Convert.ToString(jobj["vfield"][t]);
+                if (Convert.ToString(jobj["ffield"][t]) != "")
+                {
+                    str = str + " as id";
+                    isMulti = true;
+                }
+                else
+                {
+                    isMulti = false;
+                }
+            }
+            if (Convert.ToString(jobj["ftable"][t]) != "")
+            {
+                str = str + " from " + Convert.ToString(jobj["ftable"][t]);
+            }
+            if (Convert.ToString(jobj["morefield"][t]) != "")
+            {
+                moreFields = ((Convert.ToString(jobj["morefield"][t]).Replace(",", " ")).Replace("(", "")).Replace(")", "");
+                moreFields = moreFields.Replace("f#", "").Replace("d#", "");
+            }
+            if (Convert.ToString(jobj["gfield"][t]) != "")
+            {
+
+
+                if (double.TryParse(Convert.ToString(ctrl.SelectedValue), out num))
+                    str = str + " where " + Convert.ToString(jobj["gfield"][t]) + " = " + num;
+                else
+                    str = str + " where " + Convert.ToString(jobj["gfield"][t]) + " = '" + ctrl.SelectedValue + "'";
+                str = str + moreFields;
+
+
+            }
+        }
+        private DataTable getPreviousAutoNumber(string tableName, string colName)
+        {
+            DataTable dt = new DataTable();
+            try
+            {
+
+                //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
+                using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+                {
+                    con.Open();
+                    using (SqlCommand cmd = con.CreateCommand())
+                    {
+                        cmd.CommandText = "usp_GetRecentAutonumber";
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        SqlDataAdapter sqlda = new SqlDataAdapter();
+                        cmd.Parameters.AddWithValue("@TableName", tableName);
+                        cmd.Parameters.AddWithValue("@Column", colName);
+                        sqlda = new SqlDataAdapter(cmd);
+                        sqlda.Fill(dt);
+
+                    }
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Getting Values for Drop Down Control: " + ex.Message + ex.StackTrace, Log.Status.Error);
+            }
+            return dt;
+        }
+        private DataTable comboBoxValuesforLinks(string qry)
+        {
+            DataTable dt = new DataTable();
+            try
+            {
+
+                //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
+                using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+                {
+                    con.Open();
+                    using (SqlCommand cmd = con.CreateCommand())
+                    {
+                        cmd.CommandText = qry;
+                        cmd.CommandType = CommandType.Text;
+                        SqlDataAdapter sqlda = new SqlDataAdapter();
+                        sqlda = new SqlDataAdapter(cmd);
+                        sqlda.Fill(dt);
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Getting Values for Drop Down Control(link): " + ex.Message + ex.StackTrace, Log.Status.Error);
+            }
+            return dt;
+        }
         private DataTable comboBoxValues(TableDetails oDetails)
         {
             DataTable dt = new DataTable();
             try
             {
 
-               //RegistryConfig.myConn = "Server=NOWAPPSLENOVO1\\SQLEXPRESS; Integrated security=SSPI;database=nxton_pidilite;User Id= sa;Password =sam@123";
                 using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
                 {
                     con.Open();
@@ -1158,11 +2196,11 @@ namespace Pidilite
                         cmd.Parameters.AddWithValue("@TableName", oDetails.TableName);
                         cmd.Parameters.AddWithValue("@Key", oDetails.Key);
                         cmd.Parameters.AddWithValue("@Value", oDetails.Value);
+                        cmd.Parameters.AddWithValue("@Condition", oDetails.Condition);
                         sqlda = new SqlDataAdapter(cmd);
                         sqlda.Fill(dt);
                     }
                 }
-
 
             }
             catch (Exception ex)
@@ -1175,21 +2213,6 @@ namespace Pidilite
         {
             var pnl = (Panel)sender;
             pnl.Focus();
-        }
-        #endregion
-
-        private void btnDelete_Click(object sender, EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-        private void btnDownLoad_Click(object sender, EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void btnSearch_Click(object sender, EventArgs e)
-        {
-            throw new NotImplementedException();
         }
         #endregion
 
@@ -1245,8 +2268,16 @@ namespace Pidilite
             btnReset.ForeColor = Color.White;
             btnReset.Font = new Font("Calibri", 12.00F, System.Drawing.FontStyle.Bold);
             btnReset.Text = " Reset";
-            btnReset.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Refresh)
-            { ForeColor = Color.White, Size = 16 });
+            try
+            {
+                btnReset.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Refresh)
+                { ForeColor = Color.White, Size = 16 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                btnReset.Image = Properties.Resources.icon_Refresh;
+            }
             btnReset.FlatAppearance.BorderSize = 0;
             btnReset.FlatStyle = FlatStyle.Flat;
             btnReset.ImageAlign = ContentAlignment.MiddleCenter;
@@ -1257,13 +2288,11 @@ namespace Pidilite
             oPnlSearch.Controls.Add(btnReset);
             return girdDetails;
         }
-
         private void btnModule_Click(object sender, EventArgs e)
         {
             frmServerDetails oServer = new frmServerDetails(RegistryConfig.database);
             oServer.opSaveModuleDetails();
         }
-      
         private void btnReset_Click(object sender, EventArgs e)
         {
             var btnReset = (Button)sender;
@@ -1280,6 +2309,11 @@ namespace Pidilite
     }
 
     #region [Form & Grid Objects]
+    public struct HoldingCell
+    {
+        public Control cntrl;
+        public TableLayoutPanelCellPosition pos;
+    }
     public class menuDetails
     {
 
@@ -1367,6 +2401,7 @@ namespace Pidilite
         public string TableName { get; set; }
         public string Key { get; set; }
         public string Value { get; set; }
+        public string Condition { get; set; }
     }
     public class Item
     {
