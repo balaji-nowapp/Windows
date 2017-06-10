@@ -509,7 +509,7 @@ namespace Pidilite
                                     {
                                         date = Convert.ToDateTime(val);
                                     }
-                                    date = DateTime.ParseExact(date.ToString("dd-MM-yyyy hh:mm:ss"), "dd-MM-yyyy hh:mm:ss", CultureInfo.InvariantCulture);
+                                    date = DateTime.ParseExact(date.ToString("dd-MM-yyyy HH:mm:ss"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
 
                                     objData[i] = date;
 

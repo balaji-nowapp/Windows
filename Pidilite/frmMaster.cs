@@ -18,7 +18,7 @@ namespace Pidilite
     {
         #region [Data Members]
         FlowLayoutPanel oExisting = null;
-        string panelDetail = string.Empty, clickedBtn = string.Empty, table = string.Empty;
+        string panelDetail = string.Empty, clickedBtn = string.Empty, table = string.Empty,subGridTable = string.Empty;
         FontAwesome.Type type;
         Control ctrl = new Control();
         Label lbl = new Label();
@@ -32,6 +32,9 @@ namespace Pidilite
         Dictionary<string, Object> formulaHiddenField = null;
         Dictionary<string, string> subGridLink = null;
         List<string> gstCal = null;
+        List<string> requiredFields = null;
+        DataTable dtSave;
+        DataSet dtSubGrid;
         int count = 0,rowIndexVal =0;
         Button btnCreate;
 
@@ -756,11 +759,28 @@ namespace Pidilite
         #region [Form Create]
         private void btnCreate_Click(object sender, EventArgs e)
         {
+            dtSave = new DataTable();
+            dtSubGrid = new DataSet();
+            DataColumn dtColumn = new DataColumn();
+            dtColumn.ColumnName = "Field";
+            dtColumn.MaxLength = int.MaxValue;
+            dtColumn.DataType = typeof(string);
+
+            dtSave.Columns.Add(dtColumn);
+
+            dtColumn = new DataColumn();
+            dtColumn.ColumnName = "Value";
+            dtColumn.MaxLength = int.MaxValue;
+            dtColumn.DataType = typeof(string);
+
+            dtSave.Columns.Add(dtColumn);
+
             gstCal = new List<string>();
             linkDic = new Dictionary<string, JObject>();
             calcDic = new Dictionary<string, JArray>();
             subCalcDic = new Dictionary<string, JArray>();
             subGridLink = new Dictionary<string, string>();
+            requiredFields = new List<string>();
             gstCal.Add("nxt_cmn_igst");
             gstCal.Add("nxt_cmn_cgst");
             gstCal.Add("nxt_cmn_sgst");
@@ -825,6 +845,7 @@ namespace Pidilite
             Button btnClose = new Button();
             btnClose.UseMnemonic = false;
             btnClose.Text = " Save & Close";
+            btnClose.Click += new EventHandler(btnClose_Click);
             btnClose.Font = RegistryConfig.myFontBold;
             btnClose.AutoSize = true;
 
@@ -870,6 +891,42 @@ namespace Pidilite
             oPnlCreate.Controls.Add(ofnlCreate);
             oParentPnl.Controls.Add(oPnlCreate);
         }
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            var btn = (Button)sender;
+
+            Control[] ctrl = GetAll(btn.Parent.Parent.Parent);
+            DataTable dt = new DataTable();
+            dt = dtSave;
+
+            using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+            {
+                con.Open();
+               // SqlTransaction oTransact = con.BeginTransaction();
+                try
+                {
+                    using (SqlCommand cmd = con.CreateCommand())
+                    {
+                       // cmd.Transaction = oTransact;
+                        cmd.CommandText = "usp_InserFormData";
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.CommandTimeout = con.ConnectionTimeout;// Setting command timeout for sqlcommand.
+                        cmd.Parameters.AddWithValue("@ID", 0);
+                        cmd.Parameters.AddWithValue("@UserID", 1);
+                        cmd.Parameters.AddWithValue("@UDTT", dt);
+                        cmd.Parameters.AddWithValue("@tableName", table);
+                        var vOpcode = cmd.Parameters.Add("@OPCode", SqlDbType.BigInt);
+                        vOpcode.Direction = ParameterDirection.Output;
+                        var results = cmd.ExecuteNonQuery();
+                        Int64 MappingId = Convert.ToInt64(vOpcode.Value);
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                }
+                }
+        }
         public moduleValues opGetModuleDetailsByID(int moduleId, bool isForm)
         {
             moduleValues oValues = null;
@@ -904,14 +961,15 @@ namespace Pidilite
         }
         private void opFormWith2BlockFormation(Button btn, Panel oParentPnl, List<formDetails> fieldDetails, JToken obj)
         {
+
+            DataRow dr;
             FlowLayoutPanel ofpBack = new FlowLayoutPanel();
             ofpBack.Width = oParentPnl.Width - 40;
             ofpBack.BackColor = SystemColors.ButtonFace;
-            ofpBack.AutoScroll = true;
+          
             oParentPnl.Controls.Add(ofpBack);
             TableLayoutPanel tPanel = new TableLayoutPanel();
-            tPanel.ColumnCount = 2;
-            tPanel.Width = oParentPnl.Width - 47;
+            tPanel.ColumnCount = 2;          
             tPanel.AutoSize = true;
             if (Convert.ToString(obj["showHeader"]) == "Y")
             {
@@ -940,7 +998,7 @@ namespace Pidilite
             int r = 0, r2 = 0;
             foreach (var detail in fieldDetails)
             {
-
+               
                 if (detail.view == "1")
                 {
                     lbl = new Label();
@@ -954,11 +1012,26 @@ namespace Pidilite
                     lbl.Font = RegistryConfig.myFont;
                     lbl.AutoSize = true;
                     ctrl = opDynamicControlSelection(btn, pbUpload, ctrl, detail);
+                    dr = dtSave.NewRow();
+                    dr["Field"] = detail.field;
+                    //if (detail.type == "textarea" || detail.type == "textarea_editor" || detail.type == "autoNumber" || detail.type == "text" || detail.type == "string")
+                    //    {
+                    //        dr["Value"] = "";
+                    //    }
+                    if (detail.type == "text_datetime" || detail.type == "text_date")
+                    {
+                        dr["Value"] = Convert.ToString(DateTime.MinValue.ToString("dd-MM-yyyy HH:mm:ss"));
+                    }
+                    else
+                    {
+                        dr["Value"] = "";
+                    }
+                    dtSave.Rows.Add(dr);
                     if (detail.label != "")
                     {
                         tPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Convert.ToSingle(ofpBack.Width / 2)));
                     }
-
+                  
                     if (Convert.ToString(obj["title"]) == "cmntotalblock")
                     {
                         if (detail.wblock == "1")
@@ -1039,11 +1112,12 @@ namespace Pidilite
                         ctrl.Width = tPanel.GetColumnWidths()[pos.Column] * Convert.ToInt32(detail.fieldWidth) / 100;
                     }
                 }
-                tPanel.Controls.Find(detail.field, true);
+               // tPanel.Controls.Find(detail.field, true);
             }
 
             ofpBack.Controls.Add(tPanel);
             ofpBack.AutoSize = true;
+
         }
         private Control opDynamicControlSelection(Button btn, CirclePictureBox pbUpload, Control ctrl, formDetails detail, bool isSubGrid = false)
         {
@@ -1052,7 +1126,11 @@ namespace Pidilite
                 case "autoNumber":
                     ctrl = new TextBox();
                     if (detail.wreadonly == true)
-                        (ctrl as TextBox).Font = RegistryConfig.myFont;
+                    {
+                        (ctrl as TextBox).ReadOnly = true;
+                        (ctrl as TextBox).TabStop = false;
+}
+                   (ctrl as TextBox).Font = RegistryConfig.myFont;
                     JObject jAutoNo = detail.auto;
                     int i = 0;
                     DataTable dt = new DataTable();
@@ -1134,6 +1212,7 @@ namespace Pidilite
                     if (detail.wreadonly == true)
                     {
                         (ctrl as TextBox).ReadOnly = true;
+                        (ctrl as TextBox).TabStop = false;
                     }
                     if (detail.type == "hidden" || detail.type == "formula_hidden")
                     {
@@ -1150,6 +1229,7 @@ namespace Pidilite
                         }
                         (ctrl as TextBox).TextAlign = HorizontalAlignment.Right;
                         (ctrl as TextBox).ReadOnly = true;
+                        (ctrl as TextBox).TabStop = false;
 
                     }
                     if (detail.type == "formula_hidden" || detail.type == "number" || detail.type == "formula_string")
@@ -1167,17 +1247,19 @@ namespace Pidilite
                     if (detail.wreadonly == true)
                     {
                         (ctrl as DateTimePicker).Enabled = true;
+                        (ctrl as DateTimePicker).TabStop = false;
                     }
                     break;
                 case "text_datetime":
                     ctrl = new DateTimePicker();
                     ctrl.Name = detail.field;
                     (ctrl as DateTimePicker).Format = DateTimePickerFormat.Custom;
-                    (ctrl as DateTimePicker).CustomFormat = "dd-MM-yyyy hh:mm";
+                    (ctrl as DateTimePicker).CustomFormat = "dd-MM-yyyy HH:mm";
                     (ctrl as DateTimePicker).Font = RegistryConfig.myFont;
                     if (detail.wreadonly == true)
                     {
                         (ctrl as DateTimePicker).Enabled = true;
+                        (ctrl as DateTimePicker).TabStop = false;
                     }
 
                     break;
@@ -1189,6 +1271,7 @@ namespace Pidilite
                     if (detail.wreadonly == true)
                     {
                         (ctrl as RichTextBox).ReadOnly = true;
+                        (ctrl as RichTextBox).TabStop = false;
                     }
 
                     break;
@@ -1264,6 +1347,7 @@ namespace Pidilite
                     if (detail.wreadonly == true)
                     {
                         (ctrl as ComboBox).Enabled = false;
+                        (ctrl as ComboBox).TabStop = false;
                     }
 
                     break;
@@ -1273,6 +1357,7 @@ namespace Pidilite
                     if (detail.wreadonly == true)
                     {
                         (ctrl as RadioButton).Enabled = false;
+                        (ctrl as RadioButton).TabStop = false;
                     }
 
                     break;
@@ -1282,6 +1367,7 @@ namespace Pidilite
                     if (detail.wreadonly == true)
                     {
                         (ctrl as CheckBox).Enabled = false;
+                        (ctrl as CheckBox).TabStop = false;
                     }
 
                     break;
@@ -1320,15 +1406,19 @@ namespace Pidilite
                     if (detail.wreadonly == true)
                     {
                         (ctrl as TextBox).ReadOnly = true;
+                        (ctrl as TextBox).TabStop = false;
                     }
 
                     break;
+            }
+            if (detail.required == "required")
+            {
+                requiredFields.Add(detail.field);
             }
             return ctrl;
         }
         private void ctrl_TextChanged(object sender, EventArgs e)
         {
-           
             string equation = string.Empty, value = string.Empty, fields = string.Empty, fValue = string.Empty;
             string[] sFields = null;
             int rowIndex = 0;
@@ -1336,6 +1426,14 @@ namespace Pidilite
             var key = (TextBox)sender;
             if (key.Text == "")
                 key.Text = "0";
+           
+            if (dtSave.Select().ToList().Exists(row => row["Field"].ToString() == key.Name))
+            {
+                DataRow[] foundRows = dtSave.Select().ToList().Where(row => row["Field"].ToString() == key.Name).ToArray ();
+                if (foundRows.Length > 0)
+                    foundRows[0]["Value"] = key.Text;
+            }
+          
             foreach (var obj in calcDic)
             {
                 value = string.Empty;
@@ -1492,7 +1590,29 @@ namespace Pidilite
         }
         private void opSubGridControlFormations(Button btn, Panel oParentPnl, List<formDetails> fieldDetails, FlowLayoutPanel ofpnl, Int16 moduleID)
         {
-      
+            //DataRow dr;
+            //DataTable dt = new DataTable(subGridTable);
+            
+            //DataColumn dtColumn = new DataColumn();            
+            //dtColumn.ColumnName = "Field";
+            //dtColumn.MaxLength = int.MaxValue;
+            //dtColumn.DataType = typeof(string);
+            //dt.Columns.Add(dtColumn);
+
+            //dtColumn = new DataColumn();
+            //dtColumn.ColumnName = "Value";
+            //dtColumn.MaxLength = int.MaxValue;
+            //dtColumn.DataType = typeof(string);
+            //dt.Columns.Add(dtColumn);
+
+            //dtColumn = new DataColumn();
+            //dtColumn.ColumnName = "Index";
+            //dtColumn.MaxLength = int.MaxValue;
+            //dtColumn.DataType = typeof(Int64);
+            //dt.Columns.Add(dtColumn);
+
+            //dtSubGrid.Tables.Add(dt);
+
             ofpnl.FlowDirection = FlowDirection.TopDown;
             ofpnl.Width = oParentPnl.Width - 40;
             TableLayoutPanel tblPnl = new TableLayoutPanel();
@@ -1523,7 +1643,19 @@ namespace Pidilite
                     lbl.Font = RegistryConfig.myFont;
                     lbl.AutoSize = true;
                     ctrl = opDynamicControlSelection(btn, pbUpload, ctrl, detail, true);
+                    //dr = dtSave.NewRow();
+                    //dr["Field"] = detail.field;
 
+                    //if (detail.type == "text_datetime" || detail.type == "text_date")
+                    //{
+                    //    dr["Value"] = Convert.ToString(DateTime.MinValue.ToString("dd-MM-yyyy HH:mm:ss"));
+                    //}
+
+                    //else
+                    //{
+                    //    dr["Value"] = "";
+                    //}
+                 
 
                     if (detail.type != "hidden" && detail.type != "formula_hidden")
                     {
@@ -1542,6 +1674,8 @@ namespace Pidilite
                     }
                     tblPnl.Controls.Add(lbl, c, 0);
                     tblPnl.Controls.Add(ctrl, c, 1);
+                    //dr["Index"] = 1;
+                    //dt.Rows.Add(dr);
                     if (detail.fieldWidth == "")
                     {
                         ctrl.Width = 200;
@@ -1566,6 +1700,7 @@ namespace Pidilite
             tblPnl.RowCount = Convert.ToInt32(tblPnl.Tag);
             tblPnl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50F));
             PictureBox pbDelete = new PictureBox();
+            pbDelete.Name = subGridTable;
             pbDelete.Dock = DockStyle.Right;
             try
             {
@@ -1581,9 +1716,11 @@ namespace Pidilite
             pbDelete.Click += new EventHandler(pbDelete_Click);
             tblPnl.Controls.Add(pbDelete, c, 1);
             tblPnl.Width = ofpnl.Width;
+            tblPnl.Name = subGridTable;
             ofpnl.Controls.Add(tblPnl);
             Button btnAddNew = new Button();
             btnAddNew.UseMnemonic = false;
+            btnAddNew.Name = subGridTable;
             btnAddNew.Text = " New Item";
             btnAddNew.Font = RegistryConfig.myFontBold;
             btnAddNew.AutoSize = true;
@@ -1616,7 +1753,6 @@ namespace Pidilite
             ofpnl.Controls.Add(pnlBtn);
             ofpnl.Parent.Height = ofpnl.Height;
         }
-
         private void pbDelete_Click(object sender, EventArgs e)
         {
             var pb = (PictureBox)sender;
@@ -1647,9 +1783,9 @@ namespace Pidilite
               MessageBox.Show("Form must have at least one row", "Alert", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
-
         private void btnAddNew_Click(object sender, EventArgs e)
         {
+           // DataRow dr;
             var button = (Button)sender;
             count = 0;
             string stateFrom = string.Empty, stateTo = string.Empty, values = string.Empty ;
@@ -1680,6 +1816,19 @@ namespace Pidilite
                 if (detail.view == "1")
                 {
                     ctrl = opDynamicControlSelection(btnCreate, pbUpload, ctrl, detail, true);
+                    //dr = dtSave.NewRow();
+                    //dr["Field"] = detail.field;
+
+                    //if (detail.type == "text_datetime" || detail.type == "text_date")
+                    //{
+                    //    dr["Value"] = Convert.ToString(DateTime.MinValue.ToString("dd-MM-yyyy HH:mm:ss"));
+                    //}
+
+                    //else
+                    //{
+                    //    dr["Value"] = "";
+                    //}
+
                     Control[] tbxs = { ctrl };
                     if (subGridLink.ContainsKey(ctrl.Name))
                     {
@@ -1688,7 +1837,7 @@ namespace Pidilite
                         dt = comboBoxValuesforLinks(values);
                         linkCtrlValues(ref stateFrom, ref stateTo, dt, isMulti, tbxs);
                     }
-                   
+               
                   
                    
                     if (detail.type != "hidden" && detail.type != "formula_hidden")
@@ -1708,6 +1857,7 @@ namespace Pidilite
                     }
 
                     tblPnl.Controls.Add(ctrl, c, row);
+                   // dr["Index"] = Convert.ToInt64(row);
                     if (detail.fieldWidth == "")
                     {
                         ctrl.Width = 200;
@@ -1740,7 +1890,6 @@ namespace Pidilite
                 Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
                 pbDelete.Image = Properties.Resources.icon_trash;
             }
-
             pbDelete.Click += new EventHandler(pbDelete_Click);
             tblPnl.Controls.Add(pbDelete, c, row);
             tblPnl.ColumnCount = fieldDetails.Count + 1;
@@ -1833,6 +1982,7 @@ namespace Pidilite
         //}
         private void opControlFormation(Button btn, List<formDetails> fieldDetails, FlowLayoutPanel ofpnl, Panel opnlBack)
         {
+            DataRow dr;
             ofpnl.FlowDirection = FlowDirection.TopDown;
             hiddenField = new Dictionary<string, object>();
             formulaHiddenField = new Dictionary<string, object>();
@@ -1854,6 +2004,19 @@ namespace Pidilite
                     lbl.Font = RegistryConfig.myFont;
                     ofpnl.Controls.Add(lbl);
                     ctrl = opDynamicControlSelection(btn, pbUpload, ctrl, detail);
+                    dr = dtSave.NewRow();
+                    dr["Field"] = detail.field;
+
+                    if (detail.type == "text_datetime" || detail.type == "text_date")
+                    {
+                        dr["Value"] = Convert.ToString(DateTime.MinValue.ToString("dd-MM-yyyy HH:mm:ss"));
+                    }
+                   
+                    else
+                    {
+                        dr["Value"] = "";
+                    }
+                    dtSave.Rows.Add(dr);
                     if (detail.fieldWidth != "")
                         ctrl.Width = opnlBack.Width * Convert.ToInt32(detail.fieldWidth) / 100;
                     else
@@ -1889,22 +2052,39 @@ namespace Pidilite
             int c = jobj["ofield"].ToArray().Length;
             double num = 0;
             bool isMulti = false;
-           
 
-            if (ctrl.Parent.GetType().Name.ToLower () == "tablelayoutpanel" && ((TableLayoutPanel)ctrl.Parent).ColumnCount>2)
+            if (dtSave.Select().ToList().Exists(row => row["Field"].ToString() == ctrl.Name))
             {
+                DataRow[] foundRows = dtSave.Select().ToList().Where(row => row["Field"].ToString() == ctrl.Name).ToArray();
+                if (foundRows.Length > 0 && Convert.ToInt16((ctrl as ComboBox).SelectedValue) != -1)
+                    foundRows[0]["Value"] = (ctrl as ComboBox).SelectedValue;
+            }
+
+            if (ctrl.Parent.GetType().Name.ToLower() == "tablelayoutpanel" && ((TableLayoutPanel)ctrl.Parent).ColumnCount > 2)
+            {
+                var tbpnl = (TableLayoutPanel)ctrl.Parent;
+                int rowIndex = tbpnl.GetCellPosition(ctrl).Row;
+
+                //if (dtSubGrid.Tables [tbpnl.Name].Select().ToList().Exists(row => row["Field"].ToString() == ctrl.Name && Convert.ToInt32( row["Index"])== rowIndex))
+                //{
+                //    DataRow[] foundRows = dtSave.Select().ToList().Where(row => row["Field"].ToString() == ctrl.Name && Convert.ToInt32(row["Index"]) == rowIndex).ToArray();
+                //    if (foundRows.Length > 0 && Convert.ToInt16((ctrl as ComboBox).SelectedValue) != -1)
+                //        foundRows[0]["Value"] = (ctrl as ComboBox).SelectedValue;
+                //}
                 for (int t = 0; t <= c - 1; t++)
                 {
-                    var tbpnl = (TableLayoutPanel)ctrl.Parent;
-                    int rowIndex = tbpnl.GetCellPosition(ctrl).Row;
+
+                   
                     Control[] tbctrl = tbpnl.Controls.Find(jobj["ofield"][t].ToString(), true);
-                    Control[] tbxs = { tbctrl[rowIndex -1] };
+                    Control[] tbxs = { tbctrl[rowIndex - 1] };
                     if (tbxs != null && tbxs.Length > 0 && Convert.ToString(jobj["ftable"][t]) != "")
                     {
                         qryFormation(ctrl, out str, ref moreFields, jobj, num, ref isMulti, t);
-                       
+                   //     if (str !="")                       
                         dt = comboBoxValuesforLinks(str);
                         linkCtrlValues(ref stateFrom, ref stateTo, dt, isMulti, tbxs);
+                        dt = new DataTable ();
+
                     }
                 }
             }
@@ -1915,16 +2095,40 @@ namespace Pidilite
                     Control[] tbxs = this.Controls.Find(jobj["ofield"][t].ToString(), true);
                     for (int v = 0; v < tbxs.Length; v++)
                     {
+                       
                         if (tbxs != null && tbxs.Length > 0 && Convert.ToString(jobj["ftable"][t]) != "")
                         {
                             qryFormation(ctrl, out str, ref moreFields, jobj, num, ref isMulti, t);
-                            if (!subGridLink.ContainsKey(tbxs[v].Name))
-                            {
-                                subGridLink.Add(tbxs[v].Name, str);
-                            }
-                            dt = comboBoxValuesforLinks(str);
+                           // if (str != "")
+                         //   {
+                                if (!subGridLink.ContainsKey(tbxs[v].Name))
+                                {
+                                    subGridLink.Add(tbxs[v].Name, str);
+                                }
+                                dt = comboBoxValuesforLinks(str);
+                        //    }
                             Control[] loopCtrl = { tbxs[v] };
                             linkCtrlValues(ref stateFrom, ref stateTo, dt, isMulti, loopCtrl);
+                        }
+                    }
+                }
+            }
+            for (int t = 0; t <= c - 1; t++)
+            {
+                if (jobj["triggerfield"][t].ToString() != "")
+                { 
+                Control[] tbxs = this.Controls.Find(jobj["triggerfield"][t].ToString(), true);
+                    for (int v = 0; v < tbxs.Length; v++)
+                    {
+                        if (tbxs != null && tbxs.Length > 0)
+                        {
+                            if (tbxs[v].GetType().Name == "ComboBox")
+                            {
+                                int iSelectedItem = Convert.ToInt32((tbxs[v] as ComboBox).SelectedIndex );
+                                (tbxs[v] as ComboBox).SelectedIndex = 0;
+                                (tbxs[v] as ComboBox).SelectedIndex = iSelectedItem;
+                                ctrl_SelectedIndexChanged((tbxs[v] as ComboBox), EventArgs.Empty);
+                            }
                         }
                     }
                 }
@@ -1935,12 +2139,50 @@ namespace Pidilite
         {
             if (tbxs[0].GetType().Name == "ComboBox")
             {
-
-                if (dt.Rows.Count != 0)
-                {
-                    if (isMulti == true || dt.Columns.Count > 1)
+               
+                    if (dt.Rows.Count != 0)
                     {
-                        (tbxs[0] as ComboBox).ValueMember = "id";
+                        if (isMulti == true || dt.Columns.Count > 1)
+                        {
+                            (tbxs[0] as ComboBox).ValueMember = "id";
+                            (tbxs[0] as ComboBox).DisplayMember = "name";
+                            (tbxs[0] as ComboBox).DataSource = dt;
+                            DataRow dr = dt.NewRow();
+                            dr["name"] = "--Select--";
+                            dr["id"] = -1;
+                            DataRow[] rows = dt.Select("id= -1");
+                            if (rows.Length == 0)
+                            {
+                                dt.Rows.InsertAt(dr, 0);
+                            }
+
+                            //   (tbxs[0] as ComboBox).SelectedIndex =1;
+
+
+                        }
+
+                        else
+                        {
+                            (tbxs[0] as ComboBox).SelectedValue = Convert.ToInt32(dt.Rows[0][0]);
+                        }
+                    }
+                    else
+                    {
+
+                    //DataColumn dtColumn = new DataColumn();
+                    //dtColumn.ColumnName = "name";
+                    //dtColumn.MaxLength = int.MaxValue;
+                    //dtColumn.DataType = typeof(string);
+                    //dt.Columns.Add(dtColumn);
+
+                    //dtColumn = new DataColumn();
+                    //dtColumn.ColumnName = "id";
+                    //dtColumn.MaxLength = int.MaxValue;
+                    //dtColumn.DataType = typeof(string);
+                    //dt.Columns.Add(dtColumn);
+                    dt.Columns.AddRange(new DataColumn[2] { new DataColumn("name", typeof(string)),
+                                                   new DataColumn("id",typeof(string)) });
+                    (tbxs[0] as ComboBox).ValueMember = "id";
                         (tbxs[0] as ComboBox).DisplayMember = "name";
                         (tbxs[0] as ComboBox).DataSource = dt;
                         DataRow dr = dt.NewRow();
@@ -1951,33 +2193,13 @@ namespace Pidilite
                         {
                             dt.Rows.InsertAt(dr, 0);
                         }
-                       
-                 //   (tbxs[0] as ComboBox).SelectedIndex =1;
-                    }
-               
-                    else
-                    {
-                        (tbxs[0] as ComboBox).SelectedValue  = Convert.ToInt32(dt.Rows[0][0]);
-                    }
-                }
-                else
-                {
-                    (tbxs[0] as ComboBox).ValueMember = "id";
-                    (tbxs[0] as ComboBox).DisplayMember = "name";
-                    (tbxs[0] as ComboBox).DataSource = dt;
-                    DataRow dr = dt.NewRow();
-                    dr["name"] = "--Select--";
-                    dr["id"] = -1;
-                    DataRow[] rows = dt.Select("id= -1");
-                    if (rows.Length == 0)
-                    {
-                        dt.Rows.InsertAt(dr, 0);
-                    }
-                (tbxs[0] as ComboBox).SelectedIndex = 0;
-                }
+                    (tbxs[0] as ComboBox).SelectedIndex = 0;
+                    dt = null;
 
-            }
+                    }
 
+                }
+           
             else if (tbxs[0].GetType().Name == "RichTextBox")
             {
                 if (dt.Rows.Count != 0)
@@ -1988,6 +2210,7 @@ namespace Pidilite
                 {
                     (tbxs[0] as RichTextBox).Text = "";
                 }
+
             }
             else if (tbxs[0].GetType().Name == "TextBox")
             {
@@ -2004,9 +2227,9 @@ namespace Pidilite
                     {
                         stateTo = (ctrl1[0] as TextBox).Text;
                     }
-                    if (stateFrom != stateTo)
+                    if (stateFrom != stateTo && dt.Rows.Count != 0)
                     {
-                        (tbxs[0] as TextBox).Text = dt.Rows[0][0].ToString();
+                             (tbxs[0] as TextBox).Text = dt.Rows[0][0].ToString();
                     }
                     else
                     {
@@ -2025,7 +2248,7 @@ namespace Pidilite
                     {
                         stateTo = (ctrl1[0] as TextBox).Text;
                     }
-                    if (stateFrom == stateTo)
+                    if (stateFrom != stateTo && dt.Rows.Count != 0)
                     {
                         (tbxs[0] as TextBox).Text = dt.Rows[0][0].ToString();
                     }
@@ -2046,7 +2269,7 @@ namespace Pidilite
                     {
                         stateTo = (ctrl1[0] as TextBox).Text;
                     }
-                    if (stateFrom == stateTo)
+                    if (stateFrom != stateTo && dt.Rows.Count != 0)
                     {
                         (tbxs[0] as TextBox).Text = dt.Rows[0][0].ToString();
                     }
@@ -2076,10 +2299,33 @@ namespace Pidilite
                     (tbxs[0] as DateTimePicker).Text = "";
                 }
             }
+            if (tbxs[0].GetType().Name == "ComboBox")
+            {
+                if (dtSave.Select().ToList().Exists(row => row["Field"].ToString() == tbxs[0].Name))
+                {
+                    DataRow[] foundRows = dtSave.Select().ToList().Where(row => row["Field"].ToString() == tbxs[0].Name).ToArray();
+                    if (foundRows.Length > 0 && Convert.ToInt16((tbxs[0] as ComboBox).SelectedValue) != -1)
+                        foundRows[0]["Value"] = (tbxs[0] as ComboBox).SelectedValue;
+                }
+            }
+            else
+            {
+                if (dtSave.Select().ToList().Exists(row => row["Field"].ToString() == tbxs[0].Name))
+                {
+                    DataRow[] foundRows = dtSave.Select().ToList().Where(row => row["Field"].ToString() == tbxs[0].Name).ToArray();
+                    if (foundRows.Length > 0)
+                      
+                            foundRows[0]["Value"] = tbxs[0].Text;
+                     
+                }
+            }
         }
 
         private static void qryFormation(ComboBox ctrl, out string str, ref string moreFields, JObject jobj, double num, ref bool isMulti, int t)
         {
+            str = "";
+            if (Convert.ToInt32(ctrl.SelectedValue) != -1)
+            { 
             str = "select  distinct ";
             if (Convert.ToString(jobj["ffield"][t]) != "")
             {
@@ -2108,17 +2354,16 @@ namespace Pidilite
                 moreFields = ((Convert.ToString(jobj["morefield"][t]).Replace(",", " ")).Replace("(", "")).Replace(")", "");
                 moreFields = moreFields.Replace("f#", "").Replace("d#", "");
             }
-            if (Convert.ToString(jobj["gfield"][t]) != "")
-            {
+                if (Convert.ToString(jobj["gfield"][t]) != "")
+                {
+                    if (double.TryParse(Convert.ToString(ctrl.SelectedValue), out num))
+                        str = str + " where " + Convert.ToString(jobj["gfield"][t]) + " = " + num;
+                    else
+                        str = str + " where " + Convert.ToString(jobj["gfield"][t]) + " = '" + ctrl.SelectedValue + "'";
+                    str = str + moreFields;
 
 
-                if (double.TryParse(Convert.ToString(ctrl.SelectedValue), out num))
-                    str = str + " where " + Convert.ToString(jobj["gfield"][t]) + " = " + num;
-                else
-                    str = str + " where " + Convert.ToString(jobj["gfield"][t]) + " = '" + ctrl.SelectedValue + "'";
-                str = str + moreFields;
-
-
+                }
             }
         }
         private DataTable getPreviousAutoNumber(string tableName, string colName)
@@ -2306,6 +2551,15 @@ namespace Pidilite
             }
         }
         #endregion
+
+        public Control[] GetAll(Control control)
+        {
+            var controls = control.Controls.Cast<Control>();
+
+            return controls.SelectMany(ctrl => GetAll(ctrl))
+                                      .Concat(controls)
+                                      .Where(c => c.GetType() != typeof(Label) && c.GetType() != typeof(Panel) && c.GetType() != typeof(FlowLayoutPanel) && c.GetType() != typeof(TableLayoutPanel)).ToArray ();
+        }
     }
 
     #region [Form & Grid Objects]
