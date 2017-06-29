@@ -31,6 +31,7 @@ namespace Pidilite
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmMaster));
             this.pnlMain = new System.Windows.Forms.Panel();
             this.pnlHead = new System.Windows.Forms.Panel();
@@ -49,8 +50,10 @@ namespace Pidilite
             this.pnlTop = new System.Windows.Forms.Panel();
             this.btnModule = new System.Windows.Forms.Button();
             this.pnlCentre = new System.Windows.Forms.Panel();
+            this.tpnlUserName = new System.Windows.Forms.TableLayoutPanel();
             this.lblUserName = new System.Windows.Forms.Label();
             this.pbAvatar = new Pidilite.CirclePictureBox();
+            this.errorProvider1 = new System.Windows.Forms.ErrorProvider(this.components);
             this.pnlMain.SuspendLayout();
             this.pnlHead.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbIcon)).BeginInit();
@@ -61,7 +64,9 @@ namespace Pidilite
             ((System.ComponentModel.ISupportInitialize)(this.pbCornorLogo)).BeginInit();
             this.pnlTop.SuspendLayout();
             this.pnlCentre.SuspendLayout();
+            this.tpnlUserName.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbAvatar)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.errorProvider1)).BeginInit();
             this.SuspendLayout();
             // 
             // pnlMain
@@ -244,7 +249,6 @@ namespace Pidilite
             // 
             this.btnModule.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(9)))), ((int)(((byte)(52)))), ((int)(((byte)(93)))));
             this.btnModule.Dock = System.Windows.Forms.DockStyle.Right;
-            this.btnModule.Enabled = true;
             this.btnModule.FlatAppearance.BorderSize = 0;
             this.btnModule.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnModule.Location = new System.Drawing.Point(1096, 0);
@@ -252,26 +256,40 @@ namespace Pidilite
             this.btnModule.Size = new System.Drawing.Size(26, 28);
             this.btnModule.TabIndex = 0;
             this.btnModule.UseVisualStyleBackColor = true;
-            this.btnModule.Click += new System.EventHandler(btnModule_Click);
+            this.btnModule.Click += new System.EventHandler(this.btnModule_Click);
             // 
             // pnlCentre
             // 
             this.pnlCentre.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pnlCentre.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(17)))), ((int)(((byte)(69)))), ((int)(((byte)(117)))));
-            this.pnlCentre.Controls.Add(this.lblUserName);
+            this.pnlCentre.Controls.Add(this.tpnlUserName);
             this.pnlCentre.Controls.Add(this.pbAvatar);
             this.pnlCentre.Location = new System.Drawing.Point(200, 51);
             this.pnlCentre.Name = "pnlCentre";
             this.pnlCentre.Size = new System.Drawing.Size(922, 76);
             this.pnlCentre.TabIndex = 16;
             // 
+            // tpnlUserName
+            // 
+            this.tpnlUserName.AutoSize = true;
+            this.tpnlUserName.ColumnCount = 1;
+            this.tpnlUserName.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tpnlUserName.Controls.Add(this.lblUserName, 0, 0);
+            this.tpnlUserName.Location = new System.Drawing.Point(735, 44);
+            this.tpnlUserName.Name = "tpnlUserName";
+            this.tpnlUserName.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.tpnlUserName.RowCount = 1;
+            this.tpnlUserName.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tpnlUserName.Size = new System.Drawing.Size(101, 23);
+            this.tpnlUserName.TabIndex = 6;
+            // 
             // lblUserName
             // 
             this.lblUserName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblUserName.AutoSize = true;
             this.lblUserName.Font = new System.Drawing.Font("Calibri", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblUserName.Location = new System.Drawing.Point(760, 52);
+            this.lblUserName.Location = new System.Drawing.Point(3, 0);
             this.lblUserName.Name = "lblUserName";
             this.lblUserName.Size = new System.Drawing.Size(78, 15);
             this.lblUserName.TabIndex = 6;
@@ -287,6 +305,10 @@ namespace Pidilite
             this.pbAvatar.Size = new System.Drawing.Size(68, 67);
             this.pbAvatar.TabIndex = 5;
             this.pbAvatar.TabStop = false;
+            // 
+            // errorProvider1
+            // 
+            this.errorProvider1.ContainerControl = this;
             // 
             // frmMaster
             // 
@@ -315,7 +337,10 @@ namespace Pidilite
             this.pnlTop.ResumeLayout(false);
             this.pnlCentre.ResumeLayout(false);
             this.pnlCentre.PerformLayout();
+            this.tpnlUserName.ResumeLayout(false);
+            this.tpnlUserName.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbAvatar)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.errorProvider1)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -341,5 +366,7 @@ namespace Pidilite
         private Label lblClose;
         private PictureBox pbIcon;
         private Button btnModule;
+        private TableLayoutPanel tpnlUserName;
+        private ErrorProvider errorProvider1;
     }
 }

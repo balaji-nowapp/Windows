@@ -136,7 +136,7 @@
             this.btnLogin.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnLogin.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnLogin.Font = new System.Drawing.Font("Calibri", 11.25F, System.Drawing.FontStyle.Bold);
-            this.btnLogin.Image = Properties.Resources.Login;
+            this.btnLogin.Image = global::Pidilite.Properties.Resources.Login;
             this.btnLogin.Location = new System.Drawing.Point(143, 143);
             this.btnLogin.Name = "btnLogin";
             this.btnLogin.Size = new System.Drawing.Size(113, 27);

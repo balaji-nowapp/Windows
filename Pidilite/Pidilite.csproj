@@ -268,16 +268,36 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\OpenSans-Bold.ttf" />
-    <EmbeddedResource Include="Resources\OpenSans-BoldItalic.ttf" />
-    <EmbeddedResource Include="Resources\OpenSans-ExtraBold.ttf" />
-    <EmbeddedResource Include="Resources\OpenSans-ExtraBoldItalic.ttf" />
-    <EmbeddedResource Include="Resources\OpenSans-Italic.ttf" />
-    <EmbeddedResource Include="Resources\OpenSans-Light.ttf" />
-    <EmbeddedResource Include="Resources\OpenSans-LightItalic.ttf" />
-    <EmbeddedResource Include="Resources\OpenSans-Regular.ttf" />
-    <EmbeddedResource Include="Resources\OpenSans-Semibold.ttf" />
-    <EmbeddedResource Include="Resources\OpenSans-SemiboldItalic.ttf" />
+    <EmbeddedResource Include="Resources\OpenSans-Bold.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\OpenSans-BoldItalic.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\OpenSans-ExtraBold.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\OpenSans-ExtraBoldItalic.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\OpenSans-Italic.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\OpenSans-Light.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\OpenSans-LightItalic.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\OpenSans-Regular.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\OpenSans-Semibold.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\OpenSans-SemiboldItalic.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
     <None Include="Resources\Pidilite-logo.jpg" />
   </ItemGroup>
   <ItemGroup>

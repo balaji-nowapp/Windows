@@ -99,6 +99,12 @@ namespace Pidilite
                 }
                 else if (dialogResult == DialogResult.No)
                 {
+                    //RegistryKey key = Registry.CurrentUser.CreateSubKey(RegistryConfig.registryName);
+                    //key.SetValue("server_name", txtServer.Text);
+                    //key.SetValue("server_user", txtUserID.Text);
+                    //key.SetValue("server_Pwd", txtPwd.Text);
+                    //key.SetValue("database", newDatabase);
+                    //key.Close();
                     this.Close();
                 }
             }
@@ -120,7 +126,8 @@ namespace Pidilite
                 key.SetValue("server_Pwd", txtPwd.Text);
                 key.SetValue("database", newDatabase);
                 key.Close();
-
+                frmMaster masterForm = new frmMaster(userName, RegistryConfig.userImage);
+                masterForm.Show();
 
             }
 

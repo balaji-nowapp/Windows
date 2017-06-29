@@ -54,63 +54,73 @@ namespace Pidilite
         private void btnLogin_Click(object sender, EventArgs e)
         {
             second = 0;
-            if (txtUserName.Text.Trim() != "" && txtPassword.Text.Trim() != "")
+            if (txtUserName.Text.Trim() == "" || txtUserName.Text.Trim() == "Email or Mobile no." || txtPassword.Text.Trim() == "" || txtPassword.Text.Trim() == "Password")
             {
-                userName = txtUserName.Text;
-                userPwd = txtPassword.Text;
-                RegistryConfig.UserName = userName;
-                RegistryConfig.Password = userPwd;
-                RegistryConfig.LoadRegValues();
-                if (RegistryConfig.isRegEmpty == true)
-                {
-                    userCredentialValidation(userName, userPwd);// validating in central server
-                    frmServerDetails frmServer = new frmServerDetails(FirstName, LastName, DbName);                   
-                    frmServer.frmReadPNG(Avatar);
-                    frmServer.Show();
-                    if (isHide == true)
-                        Hide();
-                    else
-                    {
-                        status = respJson["message"];
-                        timerStatus.Enabled = true;
-                        timerStatus.Interval = 1000; // it will Tick in 1 seconds
-                        timerStatus.Tick += new EventHandler(timerStatus_Tick);
-                        timerStatus.Start();
-                    }
-
-                }
-                else
-                {
-                    RegistryConfig.myConn = "Server=" + RegistryConfig.serverName  + ";Integrated security=SSPI;database=" + RegistryConfig.database  + ";User Id= " + RegistryConfig.serverUser  + ";Password =" + RegistryConfig.serverPwd ;
-                    userLoginCheck(userName, userPwd);
-                    if (isHide == true)
-                    {
-                        frmMaster oMaster = new frmMaster(FirstName + " " + LastName, userPhoto);
-                        oMaster.Show();
-                    }
-                    else
-                    {
-                        status = respJson["message"];
-                        timerStatus.Enabled = true;
-                        timerStatus.Interval = 1000; // it will Tick in 1 seconds
-                        timerStatus.Tick += new EventHandler(timerStatus_Tick);
-                        timerStatus.Start();
-                    }                 
-
-                }
-            }
-            else
-            {
-                status = "Invalid Credentials...";
+                status = "Your username/password was not entered";
                 timerStatus.Enabled = true;
                 timerStatus.Interval = 1000; // it will Tick in 1 seconds
                 timerStatus.Tick += new EventHandler(timerStatus_Tick);
                 timerStatus.Start();
+            }
+            else
+            {
+                if (txtUserName.Text.Trim() != "" && txtPassword.Text.Trim() != "")
+                {
+                    userName = txtUserName.Text;
+                    userPwd = txtPassword.Text;
+                    RegistryConfig.UserName = userName;
+                    RegistryConfig.Password = userPwd;
+                    RegistryConfig.LoadRegValues();
+                    if (RegistryConfig.isRegEmpty == true)
+                    {
+                        userCredentialValidation(userName, userPwd);// validating in central server
+                        frmServerDetails frmServer = new frmServerDetails(FirstName, LastName, DbName);
+                        frmServer.frmReadPNG(Avatar);
+                        frmServer.Show();
+                        if (isHide == true)
+                            Hide();
+                        else
+                        {
+                            status = respJson["message"];
+                            timerStatus.Enabled = true;
+                            timerStatus.Interval = 1000; // it will Tick in 1 seconds
+                            timerStatus.Tick += new EventHandler(timerStatus_Tick);
+                            timerStatus.Start();
+                        }
+
+                    }
+                    else
+                    {
+                        RegistryConfig.myConn = "Server=" + RegistryConfig.serverName + ";Integrated security=SSPI;database=" + RegistryConfig.database + ";User Id= " + RegistryConfig.serverUser + ";Password =" + RegistryConfig.serverPwd;
+                        userLoginCheck(userName, userPwd);
+                        if (isHide == true)
+                        {
+                            frmMaster oMaster = new frmMaster(FirstName + " " + LastName, userPhoto);
+                            oMaster.Show();
+                        }
+                        else
+                        {
+                          //  status = respJson["message"];
+                            timerStatus.Enabled = true;
+                            timerStatus.Interval = 1000; // it will Tick in 1 seconds
+                            timerStatus.Tick += new EventHandler(timerStatus_Tick);
+                            timerStatus.Start();
+                        }
+
+                    }
+                }
+                else
+                {
+                    status = "Invalid Credentials...";
+                    timerStatus.Enabled = true;
+                    timerStatus.Interval = 1000; // it will Tick in 1 seconds
+                    timerStatus.Tick += new EventHandler(timerStatus_Tick);
+                    timerStatus.Start();
+
+                }
+
 
             }
-
-
-
         }
         private void txtPassword_TextChanged(object sender, EventArgs e)
         {
@@ -158,8 +168,6 @@ namespace Pidilite
             {
                 stream.Write(data, 0, data.Length);
             }
-
-
             try
             {
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
@@ -177,7 +185,6 @@ namespace Pidilite
                             DbName = Convert.ToString(respJson["dbName"]);
                             RegistryConfig.userId = Convert.ToInt64(respJson["id"]);
                             isHide = true;
-
                         }
                         else
                         {
@@ -194,9 +201,8 @@ namespace Pidilite
                 Log.LogData("Error in User Credential Validation: " + ex.Message + ex.StackTrace, Log.Status.Error);
                 isHide = false;
             }
-
-
         }
+        
         private void userLoginCheck(string UserID, string Password)
         {
             if (UserID.Trim() == null || UserID.Trim() == "" || Password.Trim() == null || Password.Trim() == "")
