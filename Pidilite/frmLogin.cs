@@ -81,7 +81,7 @@ namespace Pidilite
                             Hide();
                         else
                         {
-                            status = respJson["message"];
+                           // status = respJson["message"];
                             timerStatus.Enabled = true;
                             timerStatus.Interval = 1000; // it will Tick in 1 seconds
                             timerStatus.Tick += new EventHandler(timerStatus_Tick);
@@ -100,7 +100,7 @@ namespace Pidilite
                         }
                         else
                         {
-                          //  status = respJson["message"];
+                          //status = respJson["message"];
                             timerStatus.Enabled = true;
                             timerStatus.Interval = 1000; // it will Tick in 1 seconds
                             timerStatus.Tick += new EventHandler(timerStatus_Tick);
@@ -198,11 +198,15 @@ namespace Pidilite
             }
             catch (Exception ex)
             {
+                status = ex.Message;
                 Log.LogData("Error in User Credential Validation: " + ex.Message + ex.StackTrace, Log.Status.Error);
                 isHide = false;
             }
         }
-        
+        private void frmLogin_Load(object sender, EventArgs e)
+        {
+            this.Select();
+        }
         private void userLoginCheck(string UserID, string Password)
         {
             if (UserID.Trim() == null || UserID.Trim() == "" || Password.Trim() == null || Password.Trim() == "")
@@ -230,6 +234,7 @@ namespace Pidilite
 
                             if (vOpcode.Value != null && Convert.ToString(vOpcode.Value).Trim() != "" && !Convert.ToString(vOpcode.Value).Trim().StartsWith("-"))
                             {
+                                RegistryConfig.userId = Convert.ToInt64(vOpcode.Value);
                                 status = "";// Login Success 
                                 userDetails oDetails = new userDetails();
                                oDetails =  opGetUserDetails(Convert.ToInt64(vOpcode.Value));
@@ -281,6 +286,7 @@ namespace Pidilite
                 }
                 catch (Exception ex)
                 {
+                    status = "Database Error...";
                     Log.LogData("Error in User Login Check: " + ex.Message + ex.StackTrace, Log.Status.Error);
                 }
             }
@@ -297,8 +303,7 @@ namespace Pidilite
                         string tQuery = "usp_GetUserDetail {0}";
                         var results = dx.ExecuteQuery<userDetails>(tQuery, UserId);
                         oDetail = results.ToList<userDetails>();
-                    }
-                
+                    }                
             }
             return oDetail[0];
                 }

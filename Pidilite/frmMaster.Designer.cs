@@ -48,6 +48,9 @@ namespace Pidilite
             this.pnlLogo = new System.Windows.Forms.Panel();
             this.pbCornorLogo = new System.Windows.Forms.PictureBox();
             this.pnlTop = new System.Windows.Forms.Panel();
+            this.pbOrg = new System.Windows.Forms.PictureBox();
+            this.tbpnlOrg = new System.Windows.Forms.TableLayoutPanel();
+            this.cmbOrg = new System.Windows.Forms.ComboBox();
             this.btnModule = new System.Windows.Forms.Button();
             this.pnlCentre = new System.Windows.Forms.Panel();
             this.tpnlUserName = new System.Windows.Forms.TableLayoutPanel();
@@ -63,6 +66,8 @@ namespace Pidilite
             this.pnlLogo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbCornorLogo)).BeginInit();
             this.pnlTop.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbOrg)).BeginInit();
+            this.tbpnlOrg.SuspendLayout();
             this.pnlCentre.SuspendLayout();
             this.tpnlUserName.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbAvatar)).BeginInit();
@@ -218,9 +223,9 @@ namespace Pidilite
             // 
             this.pnlLogo.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(25)))), ((int)(((byte)(78)))), ((int)(((byte)(132)))));
             this.pnlLogo.Controls.Add(this.pbCornorLogo);
-            this.pnlLogo.Location = new System.Drawing.Point(0, 51);
+            this.pnlLogo.Location = new System.Drawing.Point(0, 54);
             this.pnlLogo.Name = "pnlLogo";
-            this.pnlLogo.Size = new System.Drawing.Size(200, 76);
+            this.pnlLogo.Size = new System.Drawing.Size(200, 73);
             this.pnlLogo.TabIndex = 15;
             // 
             // pbCornorLogo
@@ -238,22 +243,64 @@ namespace Pidilite
             this.pnlTop.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pnlTop.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(9)))), ((int)(((byte)(52)))), ((int)(((byte)(93)))));
+            this.pnlTop.Controls.Add(this.pbOrg);
+            this.pnlTop.Controls.Add(this.tbpnlOrg);
             this.pnlTop.Controls.Add(this.btnModule);
             this.pnlTop.ForeColor = System.Drawing.Color.White;
             this.pnlTop.Location = new System.Drawing.Point(0, 24);
             this.pnlTop.Name = "pnlTop";
-            this.pnlTop.Size = new System.Drawing.Size(1122, 28);
+            this.pnlTop.Size = new System.Drawing.Size(1122, 31);
             this.pnlTop.TabIndex = 14;
+            // 
+            // pbOrg
+            // 
+            this.pbOrg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.pbOrg.Image = ((System.Drawing.Image)(resources.GetObject("pbOrg.Image")));
+            this.pbOrg.Location = new System.Drawing.Point(1094, 4);
+            this.pbOrg.Name = "pbOrg";
+            this.pbOrg.Size = new System.Drawing.Size(24, 24);
+            this.pbOrg.TabIndex = 8;
+            this.pbOrg.TabStop = false;
+            // 
+            // tbpnlOrg
+            // 
+            this.tbpnlOrg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.tbpnlOrg.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tbpnlOrg.ColumnCount = 1;
+            this.tbpnlOrg.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 91.41104F));
+            this.tbpnlOrg.Controls.Add(this.cmbOrg, 0, 0);
+            this.tbpnlOrg.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbpnlOrg.Location = new System.Drawing.Point(845, -1);
+            this.tbpnlOrg.Margin = new System.Windows.Forms.Padding(0);
+            this.tbpnlOrg.Name = "tbpnlOrg";
+            this.tbpnlOrg.RowCount = 1;
+            this.tbpnlOrg.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tbpnlOrg.Size = new System.Drawing.Size(246, 32);
+            this.tbpnlOrg.TabIndex = 7;
+            // 
+            // cmbOrg
+            // 
+            this.cmbOrg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cmbOrg.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(9)))), ((int)(((byte)(52)))), ((int)(((byte)(93)))));
+            this.cmbOrg.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbOrg.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cmbOrg.ForeColor = System.Drawing.Color.LightGray;
+            this.cmbOrg.FormattingEnabled = true;
+            this.cmbOrg.Location = new System.Drawing.Point(3, 3);
+            this.cmbOrg.Name = "cmbOrg";
+            this.cmbOrg.Size = new System.Drawing.Size(240, 21);
+            this.cmbOrg.TabIndex = 0;
+            this.cmbOrg.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.cmbOrg_DrawItem);
             // 
             // btnModule
             // 
             this.btnModule.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(9)))), ((int)(((byte)(52)))), ((int)(((byte)(93)))));
-            this.btnModule.Dock = System.Windows.Forms.DockStyle.Right;
+            this.btnModule.Dock = System.Windows.Forms.DockStyle.Left;
             this.btnModule.FlatAppearance.BorderSize = 0;
             this.btnModule.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnModule.Location = new System.Drawing.Point(1096, 0);
+            this.btnModule.Location = new System.Drawing.Point(0, 0);
             this.btnModule.Name = "btnModule";
-            this.btnModule.Size = new System.Drawing.Size(26, 28);
+            this.btnModule.Size = new System.Drawing.Size(30, 31);
             this.btnModule.TabIndex = 0;
             this.btnModule.UseVisualStyleBackColor = true;
             this.btnModule.Click += new System.EventHandler(this.btnModule_Click);
@@ -265,23 +312,25 @@ namespace Pidilite
             this.pnlCentre.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(17)))), ((int)(((byte)(69)))), ((int)(((byte)(117)))));
             this.pnlCentre.Controls.Add(this.tpnlUserName);
             this.pnlCentre.Controls.Add(this.pbAvatar);
-            this.pnlCentre.Location = new System.Drawing.Point(200, 51);
+            this.pnlCentre.Location = new System.Drawing.Point(200, 54);
             this.pnlCentre.Name = "pnlCentre";
-            this.pnlCentre.Size = new System.Drawing.Size(922, 76);
+            this.pnlCentre.Size = new System.Drawing.Size(922, 74);
             this.pnlCentre.TabIndex = 16;
             // 
             // tpnlUserName
             // 
+            this.tpnlUserName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.tpnlUserName.AutoSize = true;
+            this.tpnlUserName.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tpnlUserName.ColumnCount = 1;
             this.tpnlUserName.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tpnlUserName.Controls.Add(this.lblUserName, 0, 0);
-            this.tpnlUserName.Location = new System.Drawing.Point(735, 44);
+            this.tpnlUserName.Location = new System.Drawing.Point(830, 52);
             this.tpnlUserName.Name = "tpnlUserName";
             this.tpnlUserName.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.tpnlUserName.RowCount = 1;
             this.tpnlUserName.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tpnlUserName.Size = new System.Drawing.Size(101, 23);
+            this.tpnlUserName.Size = new System.Drawing.Size(6, 15);
             this.tpnlUserName.TabIndex = 6;
             // 
             // lblUserName
@@ -291,9 +340,8 @@ namespace Pidilite
             this.lblUserName.Font = new System.Drawing.Font("Calibri", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblUserName.Location = new System.Drawing.Point(3, 0);
             this.lblUserName.Name = "lblUserName";
-            this.lblUserName.Size = new System.Drawing.Size(78, 15);
+            this.lblUserName.Size = new System.Drawing.Size(0, 15);
             this.lblUserName.TabIndex = 6;
-            this.lblUserName.Text = "lblUserName";
             this.lblUserName.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // pbAvatar
@@ -335,6 +383,8 @@ namespace Pidilite
             this.pnlLogo.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pbCornorLogo)).EndInit();
             this.pnlTop.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pbOrg)).EndInit();
+            this.tbpnlOrg.ResumeLayout(false);
             this.pnlCentre.ResumeLayout(false);
             this.pnlCentre.PerformLayout();
             this.tpnlUserName.ResumeLayout(false);
@@ -368,5 +418,8 @@ namespace Pidilite
         private Button btnModule;
         private TableLayoutPanel tpnlUserName;
         private ErrorProvider errorProvider1;
+        private TableLayoutPanel tbpnlOrg;
+        private PictureBox pbOrg;
+        private ComboBox cmbOrg;
     }
 }

@@ -11,6 +11,9 @@ using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
+using System.Data.OleDb;
+using System.Xml;
+using System.Text;
 
 namespace Pidilite
 {
@@ -19,9 +22,9 @@ namespace Pidilite
         #region [Data Members]
         public dynamic respJson { get; set; }
         FlowLayoutPanel oExisting = null;
-        string panelDetail = string.Empty, clickedBtn = string.Empty, table = string.Empty, subGridTable = string.Empty, primaryKey = string.Empty, subModuleIds = string.Empty;
+        string panelDetail = string.Empty, clickedBtn = string.Empty, table = string.Empty, subGridTable = string.Empty, primaryKey = string.Empty, subModuleIds = string.Empty, gridQry = string.Empty, customAutonumber = string.Empty,colName = string.Empty ;
         Int64 iModuleId = 0, iFormId = 0;
-        int count = 0, rowIndexVal = 0, viewIndex = 0, editIndex = 0;
+        int count = 0, rowIndexVal = 0, viewIndex = 0, editIndex = 0,transType =0 ,warehouse=0;
         FontAwesome.Type type;
         Control ctrl = new Control();
         Label lbl = new Label();
@@ -35,6 +38,7 @@ namespace Pidilite
         Dictionary<string, Object> formulaHiddenField = null;
         Dictionary<string, string> subGridLink = null;
         List<string> gstCal = null;
+        List<orgDetails> oOrgDetails = null;
         List<int> toDeleteRowIndex = null;
         List<Control> mandatoryCtrl = null;
         List<LinkDetails> linkPk = null;
@@ -42,6 +46,7 @@ namespace Pidilite
         DataTable dtSave;
         DataSet dtSubGrid;
         moduleValues modValues;
+        bool isGrid = false, isReportModule= false;
 
         #endregion
 
@@ -59,7 +64,6 @@ namespace Pidilite
                 btnModule.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Refresh)
                 { ForeColor = Color.White, Size = 16 });
             }
-
             catch (Exception ex)
             {
                 Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
@@ -76,6 +80,118 @@ namespace Pidilite
             Left = Top = 0;
             MaximizedBounds = Screen.FromHandle(Handle).WorkingArea;
             WindowState = FormWindowState.Maximized;
+            opGetOrgDetails();
+            cmbOrg.DataSource = oOrgDetails;
+            cmbOrg.DisplayMember = "OrgName";
+            cmbOrg.ValueMember = "OrgId";
+            cmbOrg.Name = "cmbOrg";
+            Convert.ToInt64(cmbOrg.SelectedValue);
+            Convert.ToInt64(cmbOrg.SelectedValue);
+            RegistryConfig.OrgId = 0;
+        //    cmbOrg.SelectedText = oOrgDetails.FirstOrDefault(b => b.Defaultvalue.ToString().ToLower() == "yes").OrgName;
+        //   RegistryConfig.OrgId = Convert.ToInt64(cmbOrg.SelectedValue);
+            cmbOrg.SelectionLength = 0;
+            cmbOrg.SelectedIndexChanged += new EventHandler(cmbOrg_SelectedIndexChanged);
+
+        }
+        private void cmbOrg_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            int index = e.Index >= 0 ? e.Index : 0;
+            Color myColor = Color.FromArgb(9, 52, 93);
+            SolidBrush myBrush = new SolidBrush(myColor);
+            var brush = new SolidBrush(myColor);
+            e.DrawBackground();
+            e.Graphics.DrawString(cmbOrg.Items[index].ToString(), e.Font, brush, e.Bounds, StringFormat.GenericDefault);
+            e.DrawFocusRectangle();
+        }
+        private void cmbOrg_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            cmbOrg.SelectionLength = 0;
+            RegistryConfig.OrgId = Convert.ToInt64(cmbOrg.SelectedValue);
+            opUpdateDefaultOrg();
+            if (dtSave != null)
+            {
+                if (dtSave.Select().ToList().Exists(row => row["Field"].ToString() == "org_id"))
+                {
+                    DataRow[] foundRows = dtSave.Select().ToList().Where(row => row["Field"].ToString() == "org_id").ToArray();
+                    if (foundRows.Length > 0)
+                    {
+                        foundRows[0]["Value"] = cmbOrg.SelectedValue;
+                    }
+                }
+
+            }
+            if (isGrid == true)
+            {
+                int columnCnt = 0;
+                DataTable oDataSource = new DataTable();
+                moduleValues oValues = new moduleValues();
+                oValues = opGetModuleDetailsByID(Convert.ToInt16(iModuleId), false);
+                List<gridDetails> girdDetails = new List<gridDetails>();
+                girdDetails = JsonConvert.DeserializeObject<List<gridDetails>>(oValues.Grid);
+                oDataSource = opGridQuery(oValues, girdDetails);
+                Control[] ctrlGrid = this.Controls.Find("DataGrid", true);
+                DataGridView oDataGrid = new DataGridView();
+                oDataGrid = ((DataGridView)ctrlGrid[0]);
+                oDataGrid.Columns.Clear();
+                oDataGrid.DataSource = oDataSource;
+                columnCnt = opAddColumntoDataGrid(columnCnt, oDataGrid);
+
+            }
+
+        }
+        public List<orgDetails> opGetOrgDetails()
+        {
+            oOrgDetails = new List<orgDetails>();
+            DataTable dt = new DataTable();
+            using (SqlConnection oCon = new SqlConnection(RegistryConfig.myConn))
+            {
+                oCon.Open();
+                using (SqlCommand oSqlCmd = oCon.CreateCommand())
+                {
+                    // dbo.ufn_GetOfferDeviationData  returns   a Datatable which contains the Offer Deviation datas
+                    // based on  ReqResID
+                    oSqlCmd.CommandText = "Select * from dbo.ufn_GetUserOrg (@Userid)";
+                    oSqlCmd.CommandType = CommandType.Text;
+                    oSqlCmd.Parameters.Add("@Userid", SqlDbType.BigInt).Value = RegistryConfig.userId;
+                    SqlDataAdapter oDataAdapter = new SqlDataAdapter(oSqlCmd);
+                    oSqlCmd.ExecuteNonQuery();
+                    oDataAdapter.Fill(dt);
+                }
+                oOrgDetails = (from DataRow row in dt.Rows
+                               select new orgDetails()
+                               {
+                                   OrgId = Convert.ToInt64(row["OrgId"]),
+                                   OrgName = row["OrgName"].ToString(),
+                                   Defaultvalue = row["Defaultvalue"].ToString()
+                               }).ToList();
+            }
+            return oOrgDetails;
+        }
+        public void opUpdateDefaultOrg()
+        {
+            using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+            {
+                con.Open();
+                try
+                {
+                    using (SqlCommand cmd = con.CreateCommand())
+                    {
+
+                        cmd.CommandText = "usp_UpdateDefaultOrg";
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.CommandTimeout = con.ConnectionTimeout;// Setting command timeout for sqlcommand.
+                        cmd.Parameters.AddWithValue("@OrgId", RegistryConfig.OrgId);
+                        cmd.Parameters.AddWithValue("@UserID", RegistryConfig.userId);
+                        var results = cmd.ExecuteScalar();
+
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.LogData("Error in Saving MainForm : " + ex.Message + ex.StackTrace, Log.Status.Error);
+                }
+            }
         }
         #endregion
 
@@ -262,6 +378,8 @@ namespace Pidilite
         private void btnMenu_Click(object sender, EventArgs e)
         {
             int count = 0;
+            cmbOrg.Enabled = true;
+            isReportModule = false;
             var button = (Button)sender;
             oExisting = new FlowLayoutPanel();
             oExisting = (button.Parent as FlowLayoutPanel);
@@ -344,7 +462,7 @@ namespace Pidilite
 
 
         }
-        #endregion
+        #endregion         
 
         #region[Sub Menu(Module Master)]
         private void opGenerateSubMenus(FlowLayoutPanel pnlMenu, List<menuDetails> omenudetails)
@@ -406,6 +524,8 @@ namespace Pidilite
         }
         private void btnSubMenu_Click(object sender, EventArgs e)
         {
+            isReportModule = false;
+            cmbOrg.Enabled = true;
             string logo = string.Empty;
             var button = (Button)sender;
 
@@ -523,25 +643,40 @@ namespace Pidilite
                 }
             }
             var pb = (PictureBox)sender;
-            string sModuleId = pb.Tag.ToString ();
+            string sModuleId = pb.Tag.ToString();
             moduleValues oValues = new moduleValues();
             oValues = opGetModuleDetailsByID(Convert.ToInt16(sModuleId), false);
+            if (oValues.ModuleType.ToLower() == "report")
+                isReportModule = true;
             lblBreadCrumb.Text = oValues.Title;
             lblBreadCrumb.Font = RegistryConfig.myBCFont;
             lblBreadCrumb.ForeColor = SystemColors.ControlDarkDark;
             Panel oPanel = new Panel();
             oPanel.Width = pnlBreadCrumb.Width - 40;
-            oPanel.Height = pnlBreadCrumb.Height + 20;
+            oPanel.Height = pnlBreadCrumb.Height - 10;
             oPanel.Anchor = (AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right);
             flPnlData.Controls.Add(oPanel);
             oGirdDetails = new List<Pidilite.gridDetails>();
             oGirdDetails = opCreatingSearchPanel(oValues, oPanel);
             opCreatingActionPanel(Convert.ToInt64(sModuleId), oPanel);
-            opConstructingGrid(oValues, oPanel, oGirdDetails);
+            opGridPagination();
+            iModuleId =Convert.ToInt64(sModuleId);
+            opConstructingGrid(oValues, oPanel.Width, oGirdDetails);
+
+        }
+        public void opGridPagination()
+        {
+            Panel oPanel = new Panel();
+            oPanel.Width = pnlBreadCrumb.Width - 50;
+            oPanel.Height = pnlBreadCrumb.Height - 10;
+            oPanel.BackColor = Color.Pink;
+            oPanel.Anchor = (AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right);
+            flPnlData.Controls.Add(oPanel);
         }
         private void pnlBox_Click(object sender, EventArgs e)
         {
             var pnl = (Panel)sender;
+            isReportModule = false;
             picBoxView_Click(pnl.Controls[0], EventArgs.Empty);
 
         }
@@ -555,55 +690,28 @@ namespace Pidilite
         #endregion
 
         #region[Module Grid]
-        private void opConstructingGrid(moduleValues oValues, Panel oPanel, List<gridDetails> girdDetails)
+        private void opConstructingGrid(moduleValues oValues, int width, List<gridDetails> girdDetails)
         {
+            isGrid = true;
             int columnCnt = 0;
-            primaryKey = oValues.PrimaryKey;
-            string columnBuild = "Select " + oValues.PrimaryKey + ", ";
-            foreach (var obj in girdDetails)
-            {
-                if (obj.view == true)
-                {
-                    if (Convert.ToString(obj.conn["valid"]) == "0")
-                    {
-                        if (Convert.ToBoolean(obj.attribute["image"]["active"]) == false)
-                            columnBuild = columnBuild + Convert.ToString(obj.field) + " as '" + Convert.ToString(obj.label) + "', ";
-                    }
-                    else
-                    {
-                        columnBuild = columnBuild + "(Isnull((select " + Convert.ToString(obj.conn["display"]) + " from " + Convert.ToString(obj.conn["db"]) + " where " + Convert.ToString(obj.conn["key"]) + " = " +Convert.ToString(obj.field) + "),'')) as '" + Convert.ToString(obj.label) + "', ";
-                    }
-                }
-            }
-            modValues = oValues;
-            columnBuild = columnBuild.TrimEnd(',', ' ');
-            columnBuild = columnBuild.TrimStart(',', ' '); ;
-            columnBuild = columnBuild + " from " + Convert.ToString(oValues.TableName);
+            DataTable dt = opGridQuery(oValues, girdDetails);
             Panel oPnlGrid = new Panel();
-            oPnlGrid.Width = oPanel.Width;
+            oPnlGrid.Width = width;
             oPnlGrid.Height = 610;
             flPnlData.Controls.Add(oPnlGrid);
-            DataTable dt = new DataTable();
-            //DataColumn c = new DataColumn();
-            //c.ColumnName = "S.No.";
-            //c.DataType = typeof(int);
-            //c.AutoIncrement = true;
-            //c.AutoIncrementSeed = 1;
-            //c.AutoIncrementStep = 1;
-            //dt.Columns.Add(c);
-            //c.SetOrdinal(0);
-            //DataTableReader dtReader = new DataTableReader(opGridDataByModule(columnBuild));
-            //dt.Load(dtReader);
-            //dt.EndLoadData();
-            dt = opGridDataByModule(columnBuild);
             DataGridView oDataGrid = new DataGridView();
             oDataGrid.BackgroundColor = Color.White;
             oDataGrid.AllowUserToAddRows = false;
+            oDataGrid.Name = "DataGrid";
             oDataGrid.Height = oPnlGrid.Height - 50;
             oDataGrid.Width = oPnlGrid.Width - 20;
             oDataGrid.Anchor = (AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Bottom | AnchorStyles.Right);
             oPnlGrid.Controls.Add(oDataGrid);
             oDataGrid.DataSource = dt;
+            columnCnt = opAddColumntoDataGrid(columnCnt, oDataGrid);
+        }
+        private int opAddColumntoDataGrid(int columnCnt, DataGridView oDataGrid)
+        {
             oDataGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             //Add a CheckBox Column to the DataGridView at the first position.
             DataGridViewCheckBoxColumn checkBoxColumn = new DataGridViewCheckBoxColumn();
@@ -632,29 +740,32 @@ namespace Pidilite
             }
             toDeleteRowIndex = new List<int>();
             oDataGrid.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-            DataGridViewImageColumn viewColumn = new DataGridViewImageColumn();
-            viewColumn.HeaderText = "";
-            viewColumn.Name = "viewColumn";
-            viewColumn.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Eye)
-            { ForeColor = Color.FromArgb(((byte)(3)), ((byte)(101)), ((byte)(192))), Size = 16 });
-            oDataGrid.Columns.Insert(columnCnt + 1, viewColumn);
-            viewColumn.Width = 20;
-            columnCnt = columnCnt + 1;
-            viewIndex = columnCnt;
-            DataGridViewImageColumn editColumn = new DataGridViewImageColumn();
-            editColumn.HeaderText = "";
-            editColumn.Name = "editColumn";
-
-            editColumn.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.PencilSquare)
-            { ForeColor = Color.FromArgb(((byte)(3)), ((byte)(101)), ((byte)(192))), Size = 16 });
-            oDataGrid.Columns.Insert(columnCnt + 1, editColumn);
-            editColumn.Width = 40;
-            editIndex = columnCnt + 1;
-            foreach (DataGridViewRow dgr in oDataGrid.Rows)
+            if (isReportModule == false)
             {
-                dgr.Cells[viewIndex].ToolTipText = "View";
-                dgr.Cells[editIndex].ToolTipText = "Edit";
-                dgr.Height = 40;
+                DataGridViewImageColumn viewColumn = new DataGridViewImageColumn();
+                viewColumn.HeaderText = "";
+                viewColumn.Name = "viewColumn";
+                viewColumn.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Eye)
+                { ForeColor = Color.FromArgb(((byte)(3)), ((byte)(101)), ((byte)(192))), Size = 16 });
+                oDataGrid.Columns.Insert(columnCnt + 1, viewColumn);
+                viewColumn.Width = 20;
+                columnCnt = columnCnt + 1;
+                viewIndex = columnCnt;
+                DataGridViewImageColumn editColumn = new DataGridViewImageColumn();
+                editColumn.HeaderText = "";
+                editColumn.Name = "editColumn";
+
+                editColumn.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.PencilSquare)
+                { ForeColor = Color.FromArgb(((byte)(3)), ((byte)(101)), ((byte)(192))), Size = 16 });
+                oDataGrid.Columns.Insert(columnCnt + 1, editColumn);
+                editColumn.Width = 40;
+                editIndex = columnCnt + 1;
+                foreach (DataGridViewRow dgr in oDataGrid.Rows)
+                {
+                    dgr.Cells[viewIndex].ToolTipText = "View";
+                    dgr.Cells[editIndex].ToolTipText = "Edit";
+                    dgr.Height = 40;
+                }
             }
             oDataGrid.CellBorderStyle = DataGridViewCellBorderStyle.None;
             oDataGrid.AlternatingRowsDefaultCellStyle.BackColor = SystemColors.ButtonFace;
@@ -663,16 +774,70 @@ namespace Pidilite
             oDataGrid.ColumnHeadersDefaultCellStyle.Font = new Font("Calibri", 10.00F, System.Drawing.FontStyle.Bold);
             oDataGrid.CellClick += new DataGridViewCellEventHandler(this.oDataGrid_CellContentClick);
             oDataGrid.CellContentDoubleClick += new DataGridViewCellEventHandler(this.oDataGrid_CellContentDoubleClick);
+            return columnCnt;
+        }
+        private DataTable opGridQuery(moduleValues oValues, List<gridDetails> girdDetails)
+        {
+            primaryKey = oValues.PrimaryKey;
+            string columnBuild = string.Empty;
+            if (primaryKey != null && primaryKey != "")
+                columnBuild = "Select " + oValues.TableName + "." + oValues.PrimaryKey + ", ";
+            else
+                columnBuild = "Select ";
+            foreach (var obj in girdDetails)
+            {
+                if (obj.view == true)
+                {
+                    if (Convert.ToString(obj.conn["valid"]) == "0")
+                    {
+                        if ((Convert.ToString (obj.attribute["image"]["active"]) =="{0}" ) || (Convert.ToString (obj.attribute["image"]["active"])=="0"))
+                            columnBuild = columnBuild + Convert.ToString(obj.alias) + "." + Convert.ToString(obj.field) + " as '" + Convert.ToString(obj.label) + "', ";
+                    }
+                    else
+                    {
+                        columnBuild = columnBuild + "(Isnull((select " + Convert.ToString(obj.conn ["db"] ) + "." + Convert.ToString(obj.conn["display"]) + " from " + Convert.ToString(obj.conn["db"]) + " where " + Convert.ToString(obj.conn["key"]) + " = " + Convert.ToString(obj.alias) + "." + Convert.ToString(obj.field) + "),'')) as '" + Convert.ToString(obj.label) + "', ";
+                    }
+                }
+            }
+            modValues = oValues;
+            columnBuild = columnBuild.TrimEnd(',', ' ');
+            columnBuild = columnBuild.TrimStart(',', ' ');
+           
+            columnBuild = columnBuild + " " + oValues.SQLSelect ;
+            table = oValues.TableName;
+            if (oValues.whereCond != null && oValues.whereCond != "")
+            {
+                columnBuild = columnBuild + Convert.ToString(oValues.whereCond);
+            }
+
+            columnBuild = columnBuild.Replace("'{user_id}'", Convert.ToString(RegistryConfig.userId));
+            columnBuild = columnBuild.Replace("'{org_id}'", Convert.ToString(RegistryConfig.OrgId));
+            DataTable dt = new DataTable();
+            //DataColumn c = new DataColumn();
+            //c.ColumnName = "S.No.";
+            //c.DataType = typeof(int);
+            //c.AutoIncrement = true;
+            //c.AutoIncrementSeed = 1;
+            //c.AutoIncrementStep = 1;
+            //dt.Columns.Add(c);
+            //c.SetOrdinal(0);
+            //DataTableReader dtReader = new DataTableReader(opGridDataByModule(columnBuild));
+            //dt.Load(dtReader);
+            //dt.EndLoadData();
+            gridQry = columnBuild;
+            dt = opGridDataByModule(columnBuild);
+            return dt;
         }
         private void oDataGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
+            cmbOrg.Enabled = false;
             var oDataGrid = (DataGridView)sender;
             int i = 0; Int64 id = 0;
             i = oDataGrid.CurrentCell.RowIndex;
             id = Convert.ToInt64(oDataGrid.Rows[i].Cells[1].Value);
             if ((e.ColumnIndex == viewIndex))
             {
-                opViewForm(iModuleId, (Panel)oDataGrid.Parent);
+                opViewForm(iModuleId, (Panel)oDataGrid.Parent, id);
                 opConstructingQry(modValues, id, false);
                 string[] subModule = subModuleIds.Split(',');
                 moduleValues oValues = new moduleValues();
@@ -682,47 +847,57 @@ namespace Pidilite
                     oValues = opGetModuleDetailsByID(Convert.ToInt16(module), false);
                     opConstructingQry(oValues, Convert.ToInt64(module), true, id);
                 }
+
             }
             else if ((e.ColumnIndex == editIndex))
             {
-                DataTable dt = new DataTable();
-                string strQuery = string.Empty;
-                opEditForm(iModuleId, (Panel)oDataGrid.Parent);
-
-                strQuery = string.Join(",", dtSave.AsEnumerable().Select(p => p.Field<string>("Field")));
-                strQuery = "Select " + primaryKey + " ," + strQuery + " from " + table + " with (nolock) where " + primaryKey + " = " + id;
-                dt = opGridDataByModule(strQuery);
+                opEditForm(iModuleId, (Panel)oDataGrid.Parent, false);
+                opEditFormCreation(id);
+            }
+            if (e.ColumnIndex == 0)
+            {
+                ProcessDataGridViewCheckBox(e, oDataGrid);
+            }
+        }
+        private void opEditFormCreation(long id)
+        {
+            cmbOrg.Enabled = false;
+            DataTable dt = new DataTable();
+            string strQuery = string.Empty;
+            strQuery = string.Join(",", dtSave.AsEnumerable().Select(p => p.Field<string>("Field")));
+            strQuery = "Select " + primaryKey + " ," + strQuery + " from " + table + " with (nolock) where " + primaryKey + " = " + id;
+            dt = opGridDataByModule(strQuery);
+            if (dt != null)
+            {
                 foreach (DataColumn col in dt.Columns)
                 {
                     Control[] ctrl = this.Controls.Find(col.ColumnName, true);
                     foreach (Control ct in ctrl)
                     {
-                        if (ct.GetType() == typeof(ComboBox))
+                        if (Convert.ToString(dt.Rows[0][col.ColumnName]) != null && Convert.ToString(dt.Rows[0][col.ColumnName]) != "")
                         {
-                            (ct as ComboBox).SelectedValue = Convert.ToInt64(dt.Rows[0][col.ColumnName]);
-                        }
-                        else
-                        {
-                            if (dt.Rows[0][col.ColumnName].ToString() != "01-01-0001 00:00:00" && dt.Rows[0][col.ColumnName].ToString() != "01-01-0001")
-                                ct.Text = dt.Rows[0][col.ColumnName].ToString();
+                            if (ct.GetType() == typeof(ComboBox) )
+                            {
+                                (ct as ComboBox).SelectedValue = Convert.ToInt64(dt.Rows[0][col.ColumnName]);
+                            }
                             else
-                                ct.Text = "";
+                            {
+                                if (dt.Rows[0][col.ColumnName].ToString() != "01-01-0001 00:00:00" && dt.Rows[0][col.ColumnName].ToString() != "01-01-0001")
+                                    ct.Text = dt.Rows[0][col.ColumnName].ToString();
+                                else
+                                    ct.Text = "";
+                            }
                         }
                     }
                 }
-
-                string[] subModule = subModuleIds.Split(',');
-                moduleValues oValues = new moduleValues();
-                List<gridDetails> girdDetails = new List<gridDetails>();
-                foreach (var module in subModule)
-                {
-                    oValues = opGetModuleDetailsByID(Convert.ToInt16(module), false);
-                    opSubDetailConstructingQry(oValues, Convert.ToInt64(module), id);
-                }
             }
-            if (e.ColumnIndex == 0)
+            string[] subModule = subModuleIds.Split(',');
+            moduleValues oValues = new moduleValues();
+            List<gridDetails> girdDetails = new List<gridDetails>();
+            foreach (var module in subModule)
             {
-                ProcessDataGridViewCheckBox(e, oDataGrid);
+                oValues = opGetModuleDetailsByID(Convert.ToInt16(module), false);
+                opSubDetailConstructingQry(oValues, Convert.ToInt64(module), id);
             }
         }
         private void ProcessDataGridViewCheckBox(DataGridViewCellEventArgs e, DataGridView oDataGrid)
@@ -772,7 +947,6 @@ namespace Pidilite
             string link_Key = string.Empty;
             int subDetailCount = 0;
             List<formDetails> fieldDetails = new List<formDetails>();
-
             if (isSubModule == true)
             {
                 moduleValues oModuleValues = new moduleValues();
@@ -796,7 +970,7 @@ namespace Pidilite
                 }
                 else
                 {
-                    columnBuild = columnBuild + "(Isnull((select " + Convert.ToString(obj.conn["display"]) + " from " + Convert.ToString(obj.conn["db"]) + " where " + Convert.ToString(obj.conn["key"]) + " = " + Convert.ToString(oValues.TableName)+"."+ Convert.ToString(obj.field) + "),'')) as '" + Convert.ToString(obj.field) + "', ";
+                    columnBuild = columnBuild + "(Isnull((select " + Convert.ToString(obj.conn["display"]) + " from " + Convert.ToString(obj.conn["db"]) + " where " + Convert.ToString(obj.conn["key"]) + " = " + Convert.ToString(oValues.TableName) + "." + Convert.ToString(obj.field) + "),'')) as '" + Convert.ToString(obj.field) + "', ";
                 }
             }
             columnBuild = columnBuild.TrimEnd(',', ' ');
@@ -806,9 +980,8 @@ namespace Pidilite
                 columnBuild = columnBuild + " with(nolock) where " + primaryKey + " = " + Convert.ToString(modId);
             else
                 columnBuild = columnBuild + " with(nolock) where " + link_Key + " = " + Convert.ToString(id);
+            gridQry = columnBuild;
             dt = opGridDataByModule(columnBuild);
-
-
             subDetailCount = dt.Rows.Count;
             if (isSubModule == true)
             {
@@ -908,16 +1081,17 @@ namespace Pidilite
                                       .Concat(controls)
                                       .Where(c => c.GetType() == typeof(TableLayoutPanel) && c.Name == moduleId);
         }
+
         #endregion
 
         #region [Action Panel]
         private void opCreatingActionPanel(long lModuleId, Panel oPanel)
         {
             FlowLayoutPanel oPnlAction = new FlowLayoutPanel();
-            oPnlAction.Dock = DockStyle.Right;
+            if (isReportModule == false )
             oPnlAction.Width = 230;
-            oPnlAction.AutoSize = false;
-            oPnlAction.Height = pnlBreadCrumb.Height;
+            else
+                oPnlAction.Width = 115;
             oPnlAction.Anchor = (AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right);
             oPnlAction.Dock = DockStyle.Right;
             oPanel.Controls.Add(oPnlAction);
@@ -926,8 +1100,6 @@ namespace Pidilite
             btnSearch.Height = 26;
             btnSearch.Width = 40;
             btnSearch.BackColor = Color.FromArgb(((byte)(181)), ((byte)(94)), ((byte)(0)));
-
-
             try
             {
                 btnSearch.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Search)
@@ -955,8 +1127,6 @@ namespace Pidilite
             btnDownLoad.Height = 26;
             btnDownLoad.Width = 40;
             btnDownLoad.BackColor = Color.FromArgb(((byte)(2)), ((byte)(154)), ((byte)(207)));
-
-
             try
             {
                 btnDownLoad.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Download)
@@ -979,79 +1149,368 @@ namespace Pidilite
             toolTip2.ShowAlways = true;
             toolTip2.SetToolTip(btnDownLoad, "Download");
             oPnlAction.Controls.Add(btnDownLoad);
-            Button btnDelete = new Button();
-            btnDelete.Margin = new Padding(10, 3, 0, 0);
-            btnDelete.Name = "btnDelete";
-            btnDelete.Height = 26;
-            btnDelete.Width = 40;
-            btnDelete.BackColor = Color.FromArgb(((byte)(217)), ((byte)(35)), ((byte)(15)));
 
-            try
+            if (isReportModule == false)
             {
-                btnDelete.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.MinusCircle)
-                { ForeColor = Color.White, Size = 18 });
+                Button btnDelete = new Button();
+                btnDelete.Margin = new Padding(10, 3, 0, 0);
+                btnDelete.Name = "btnDelete";
+                btnDelete.Height = 26;
+                btnDelete.Width = 40;
+                btnDelete.BackColor = Color.FromArgb(((byte)(217)), ((byte)(35)), ((byte)(15)));
+                try
+                {
+                    btnDelete.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.MinusCircle)
+                    { ForeColor = Color.White, Size = 18 });
+                }
+                catch (Exception ex)
+                {
+                    Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                    btnDelete.Image = Properties.Resources.icon_minus_Circle;
+                }
+                btnDelete.FlatAppearance.BorderSize = 0;
+                btnDelete.FlatStyle = FlatStyle.Flat;
+                btnDelete.ImageAlign = ContentAlignment.TopCenter;
+                btnDelete.Click += new EventHandler(btnDelete_Click);
+                ToolTip toolTip3 = new ToolTip();
+                toolTip3.AutoPopDelay = 3000;
+                toolTip3.InitialDelay = 500;
+                toolTip3.ReshowDelay = 500;
+                toolTip3.ShowAlways = true;
+                toolTip3.SetToolTip(btnDelete, "Remove");
+                oPnlAction.Controls.Add(btnDelete);
+                Button btnCreate = new Button();
+                btnCreate.Name = "btnCreate";
+                btnCreate.Height = 26;
+                btnCreate.Width = 40;
+                btnCreate.BackColor = Color.FromArgb(((byte)(70)), ((byte)(148)), ((byte)(8)));
+                try
+                {
+                    btnCreate.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.PlusCircle)
+                    { ForeColor = Color.White, Size = 18 });
+                }
+                catch (Exception ex)
+                {
+                    Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                    btnCreate.Image = Properties.Resources.icon_PlusCircle;
+                }
+                btnCreate.FlatAppearance.BorderSize = 0;
+                btnCreate.FlatStyle = FlatStyle.Flat;
+                btnCreate.ImageAlign = ContentAlignment.TopCenter;
+                btnCreate.Tag = lModuleId;
+                iModuleId = Convert.ToInt64(btnCreate.Tag);
+                btnCreate.Margin = new Padding(10, 3, 0, 0);
+                btnCreate.Click += new EventHandler(btnCreate_Click);
+                ToolTip toolTip4 = new ToolTip();
+                toolTip4.AutoPopDelay = 3000;
+                toolTip4.InitialDelay = 500;
+                toolTip4.ReshowDelay = 500;
+                toolTip4.ShowAlways = true;
+                toolTip4.SetToolTip(btnCreate, "Create");
+                oPnlAction.Controls.Add(btnCreate);
+                oPnlAction.Height = pnlBreadCrumb.Height - 10;
             }
-            catch (Exception ex)
-            {
-                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
-                btnDelete.Image = Properties.Resources.icon_minus_Circle;
-            }
-            btnDelete.FlatAppearance.BorderSize = 0;
-            btnDelete.FlatStyle = FlatStyle.Flat;
-            btnDelete.ImageAlign = ContentAlignment.TopCenter;
-            btnDelete.Click += new EventHandler(btnDelete_Click);
-            ToolTip toolTip3 = new ToolTip();
-            toolTip3.AutoPopDelay = 3000;
-            toolTip3.InitialDelay = 500;
-            toolTip3.ReshowDelay = 500;
-            toolTip3.ShowAlways = true;
-            toolTip3.SetToolTip(btnDelete, "Remove");
-            oPnlAction.Controls.Add(btnDelete);
-            Button btnCreate = new Button();
-            btnCreate.Name = "btnCreate";
-            btnCreate.Height = 26;
-            btnCreate.Width = 40;
-            btnCreate.BackColor = Color.FromArgb(((byte)(70)), ((byte)(148)), ((byte)(8)));
-
-            try
-            {
-                btnCreate.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.PlusCircle)
-                { ForeColor = Color.White, Size = 18 });
-            }
-            catch (Exception ex)
-            {
-                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
-                btnCreate.Image = Properties.Resources.icon_PlusCircle;
-            }
-            btnCreate.FlatAppearance.BorderSize = 0;
-            btnCreate.FlatStyle = FlatStyle.Flat;
-            btnCreate.ImageAlign = ContentAlignment.TopCenter;
-            btnCreate.Tag = lModuleId;
-            iModuleId = Convert.ToInt64(btnCreate.Tag);
-            btnCreate.Margin = new Padding(10, 3, 0, 0);
-            btnCreate.Click += new EventHandler(btnCreate_Click);
-            ToolTip toolTip4 = new ToolTip();
-            toolTip4.AutoPopDelay = 3000;
-            toolTip4.InitialDelay = 500;
-            toolTip4.ReshowDelay = 500;
-            toolTip4.ShowAlways = true;
-            toolTip4.SetToolTip(btnCreate, "Create");
-            oPnlAction.Controls.Add(btnCreate);
         }
         private void btnDelete_Click(object sender, EventArgs e)
         {
             var btn = (Button)sender;
-            DataGridView oGrid = (btn.Parent.Parent.Parent.Controls[1].Controls).OfType<DataGridView>().FirstOrDefault();
-            foreach (int id in toDeleteRowIndex)
+            if (toDeleteRowIndex.Count == 0)
             {
-                DataGridViewRow row = oGrid.Rows.Cast<DataGridViewRow>().Where(r => r.Cells[primaryKey].Value.ToString().Equals(Convert.ToString(id))).First();
-                oGrid.Rows.Remove(oGrid.Rows[row.Index]);
+                MessageBox.Show("     No Item got Selected !!", "Alert", MessageBoxButtons.OK);
             }
-            toDeleteRowIndex = new List<int>();
+            else
+            {
+                DialogResult dialogResult = MessageBox.Show("Are you sure removing selected rows ?", "Alert", MessageBoxButtons.YesNo);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    DataGridView oGrid = (btn.Parent.Parent.Parent.Controls[2].Controls).OfType<DataGridView>().FirstOrDefault();
+                    foreach (int id in toDeleteRowIndex)
+                    {
+                        DataGridViewRow row = oGrid.Rows.Cast<DataGridViewRow>().Where(r => r.Cells[primaryKey].Value.ToString().Equals(Convert.ToString(id))).First();
+                        oGrid.Rows.Remove(oGrid.Rows[row.Index]);
+                    }
+                    opDeleteDatafromDB();
+                    toDeleteRowIndex = new List<int>();
+
+                }
+            }
+
+        }
+        private void opDeleteDatafromDB()
+        {
+            using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+            {
+                con.Open();
+                using (SqlCommand oSqlCmd = con.CreateCommand())
+                {
+                    oSqlCmd.CommandText = "usp_DeleteDatafromGrid";
+                    oSqlCmd.CommandType = CommandType.StoredProcedure;
+                    oSqlCmd.Parameters.AddWithValue("@RID", toDeleteRowIndex.Select(i => i.ToString(CultureInfo.InvariantCulture))
+                     .Aggregate((s1, s2) => s1 + ", " + s2));
+                    oSqlCmd.Parameters.AddWithValue("@TableName", table);
+                    oSqlCmd.Parameters.AddWithValue("@PrimaryKey", primaryKey);
+                    var results = oSqlCmd.ExecuteNonQuery();
+                    if (Convert.ToInt64(results) > 0)
+                    {
+                        MessageBox.Show("     Removed Sucessfully !!", "Alert", MessageBoxButtons.OK);
+                    }
+                }
+            }
         }
         private void btnDownLoad_Click(object sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            string strPath = @"E:\Export.xls";
+            moduleValues oValues = new moduleValues();
+            oValues = opGetModuleDetailsByID(Convert.ToInt16(iModuleId), false);
+            List<gridDetails> girdDetails = new List<gridDetails>();
+            girdDetails = JsonConvert.DeserializeObject<List<gridDetails>>(oValues.Grid);
+            DataTable dt = new DataTable();
+            dt = opGridQueryForExcel(oValues, girdDetails);
+            opCreateExcel(dt, strPath);
+        }
+        private DataTable opGridQueryForExcel(moduleValues oValues, List<gridDetails> girdDetails)
+        {
+            primaryKey = oValues.PrimaryKey;
+            string columnBuild =  "Select " + oValues.TableName + "." + oValues.PrimaryKey + ", ";
+            foreach (var obj in girdDetails)
+            {
+                if (obj.download == true)
+                {
+                    if (Convert.ToString(obj.conn["valid"]) == "0")
+                    {
+                        if (Convert.ToBoolean(obj.attribute["image"]["active"]) == false)
+                            columnBuild = columnBuild + Convert.ToString(obj.field) + " as '" + Convert.ToString(obj.label) + "', ";
+                    }
+                    else
+                    {
+                        columnBuild = columnBuild + "(Isnull((select " + Convert.ToString(obj.conn["display"]) + " from " + Convert.ToString(obj.conn["db"]) + " where " + Convert.ToString(obj.conn["key"]) + " = " + Convert.ToString(obj.alias) + "." + Convert.ToString(obj.field) + "),'')) as '" + Convert.ToString(obj.label) + "', ";
+                    }
+                }
+            }
+            modValues = oValues;
+            columnBuild = columnBuild.TrimEnd(',', ' ');
+            columnBuild = columnBuild.TrimStart(',', ' ');
+            columnBuild = columnBuild = columnBuild + " " + oValues.SQLSelect;
+            table = oValues.TableName;
+            if (oValues.whereCond != null && oValues.whereCond != "")
+            {
+                columnBuild = columnBuild + Convert.ToString(oValues.whereCond);
+            }
+
+            columnBuild = columnBuild.Replace("'{user_id}'", Convert.ToString(RegistryConfig.userId));
+            columnBuild = columnBuild.Replace("'{org_id}'", Convert.ToString(RegistryConfig.OrgId));
+            DataTable dt = new DataTable();
+            //DataColumn c = new DataColumn();
+            //c.ColumnName = "S.No.";
+            //c.DataType = typeof(int);
+            //c.AutoIncrement = true;
+            //c.AutoIncrementSeed = 1;
+            //c.AutoIncrementStep = 1;
+            //dt.Columns.Add(c);
+            //c.SetOrdinal(0);
+            //DataTableReader dtReader = new DataTableReader(opGridDataByModule(columnBuild));
+            //dt.Load(dtReader);
+            //dt.EndLoadData();
+            //   gridQry = columnBuild;
+            dt = opGridDataByModule(columnBuild);
+            return dt;
+        }
+        /// <summary>       
+        /// Create one Excel-XML-Document with SpreadsheetML from a DataTable
+        /// </summary>        
+        /// <param name="dtSource">Datasource which would be exported in Excel</param>
+        /// <param name="strFileName">Name of exported file</param>
+        public void opCreateExcel(DataTable dtSource, string strFileName)
+         {
+            // Create XMLWriter
+            XmlTextWriter xtwWriter = new XmlTextWriter(strFileName, Encoding.UTF8);
+
+            //Format the output file for reading easier
+            xtwWriter.Formatting = System.Xml.Formatting.Indented;
+
+            // <?xml version="1.0"?>
+            xtwWriter.WriteStartDocument();
+
+            // <?mso-application progid="Excel.Sheet"?>
+            xtwWriter.WriteProcessingInstruction("mso-application", "progid=\"Excel.Sheet\"");
+
+            // <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet >"
+            xtwWriter.WriteStartElement("Workbook", "urn:schemas-microsoft-com:office:spreadsheet");
+
+            //Write definition of namespace
+            xtwWriter.WriteAttributeString("xmlns", "o", null, "urn:schemas-microsoft-com:office:office");
+            xtwWriter.WriteAttributeString("xmlns", "x", null, "urn:schemas-microsoft-com:office:excel");
+            xtwWriter.WriteAttributeString("xmlns", "ss", null, "urn:schemas-microsoft-com:office:spreadsheet");
+            xtwWriter.WriteAttributeString("xmlns", "html", null, "http://www.w3.org/TR/REC-html40");
+
+            // <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+            xtwWriter.WriteStartElement("DocumentProperties", "urn:schemas-microsoft-com:office:office");
+
+            // Write document properties
+            xtwWriter.WriteElementString("Author", Environment.UserName);
+            xtwWriter.WriteElementString("LastAuthor", Environment.UserName);
+            xtwWriter.WriteElementString("Created", DateTime.Now.ToString("u") + "Z");
+            xtwWriter.WriteElementString("Company", "Unknown");
+            xtwWriter.WriteElementString("Version", "11.8122");
+
+            // </DocumentProperties>
+            xtwWriter.WriteEndElement();
+
+            // <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
+            xtwWriter.WriteStartElement("ExcelWorkbook", "urn:schemas-microsoft-com:office:excel");
+
+            // Write settings of workbook
+            xtwWriter.WriteElementString("WindowHeight", "13170");
+            xtwWriter.WriteElementString("WindowWidth", "17580");
+            xtwWriter.WriteElementString("WindowTopX", "120");
+            xtwWriter.WriteElementString("WindowTopY", "60");
+            xtwWriter.WriteElementString("ProtectStructure", "False");
+            xtwWriter.WriteElementString("ProtectWindows", "False");
+
+            // </ExcelWorkbook>
+            xtwWriter.WriteEndElement();
+
+            // <Styles>
+            xtwWriter.WriteStartElement("Styles");
+
+            // <Style ss:ID="Default" ss:Name="Normal">
+            xtwWriter.WriteStartElement("Style");
+            xtwWriter.WriteAttributeString("ss", "ID", null, "Default");
+            xtwWriter.WriteAttributeString("ss", "Name", null, "Normal");
+            xtwWriter.WriteStartElement("Alignment");
+            xtwWriter.WriteAttributeString("ss", "Vertical", null, "Bottom");
+            xtwWriter.WriteEndElement();
+
+            // Write null on the other properties
+            xtwWriter.WriteElementString("Borders", null);
+            xtwWriter.WriteElementString("Font", null);
+            xtwWriter.WriteElementString("Interior", null);
+            xtwWriter.WriteElementString("NumberFormat", null);
+            xtwWriter.WriteElementString("Protection", null);
+
+            // </Style>
+            xtwWriter.WriteEndElement();
+
+            //xtwWriter.WriteStartElement("Style");
+            //xtwWriter.WriteAttributeString("ss", "ID", null, "s16");
+            //xtwWriter.WriteStartElement("Font");
+            //xtwWriter.WriteAttributeString("ss", "Bold", null, "1");
+            //xtwWriter.WriteAttributeString("ss", "Size", null, "11");
+            //xtwWriter.WriteAttributeString("ss", "Underline", null, "Single");
+            //xtwWriter.WriteEndElement();
+
+            // </Styles>
+            xtwWriter.WriteEndElement();
+
+            // <Worksheet ss:Name="xxx">
+            xtwWriter.WriteStartElement("Worksheet");
+            xtwWriter.WriteAttributeString("ss", "Name", null, dtSource.TableName);
+
+            // <Table ss:ExpandedColumnCount="2" ss:ExpandedRowCount="3" x:FullColumns="1" x:FullRows="1" ss:DefaultColumnWidth="60">
+            xtwWriter.WriteStartElement("Table");
+            xtwWriter.WriteAttributeString("ss", "ExpandedColumnCount", null, dtSource.Columns.Count.ToString());
+            xtwWriter.WriteAttributeString("ss", "ExpandedRowCount", null, dtSource.Rows.Count.ToString());
+            xtwWriter.WriteAttributeString("x", "FullColumns", null, "1");
+            xtwWriter.WriteAttributeString("x", "FullRows", null, "1");
+            xtwWriter.WriteAttributeString("ss", "DefaultColumnWidth", null, "60");
+            // <Row>
+            xtwWriter.WriteStartElement("Row");
+            foreach (DataColumn col in dtSource.Columns)
+            {
+                // Run through all cell of current rows
+
+                // <Cell>
+                xtwWriter.WriteStartElement("Cell");
+                // xtwWriter.WriteAttributeString("ss", "StyleID", null, "s16");
+                xtwWriter.WriteStartElement("Data");
+                xtwWriter.WriteAttributeString("ss", "Type", null, "String");
+
+                // Write content of cell
+                xtwWriter.WriteValue(col.ColumnName);
+
+                // </Data>
+                xtwWriter.WriteEndElement();
+
+                // </Cell>
+                xtwWriter.WriteEndElement();
+            }
+            // </Row>
+            xtwWriter.WriteEndElement();
+            // Run through all rows of data source
+            foreach (DataRow row in dtSource.Rows)
+            {
+                // <Row>
+                xtwWriter.WriteStartElement("Row");
+
+                // Run through all cell of current rows
+                foreach (object  cellValue in row.ItemArray)
+                {
+                    string value = string.Empty;
+                    if (cellValue != null)
+                        value = Convert.ToString (cellValue);
+                    // <Cell>
+                    xtwWriter.WriteStartElement("Cell");
+                    // <Data ss:Type="String">xxx</Data>
+                    xtwWriter.WriteStartElement("Data");
+                    xtwWriter.WriteAttributeString("ss", "Type", null, "String");
+                    // Write content of cell
+                    xtwWriter.WriteValue(value);
+                    // </Data>
+                    xtwWriter.WriteEndElement();
+                    // </Cell>
+                    xtwWriter.WriteEndElement();
+                }
+                // </Row>
+                xtwWriter.WriteEndElement();
+            }
+            // </Table>
+            xtwWriter.WriteEndElement();
+
+            // <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+            xtwWriter.WriteStartElement("WorksheetOptions", "urn:schemas-microsoft-com:office:excel");
+            // Write settings of page
+            xtwWriter.WriteStartElement("PageSetup");
+            xtwWriter.WriteStartElement("Header");
+            xtwWriter.WriteAttributeString("x", "Margin", null, "0.4921259845");
+            xtwWriter.WriteEndElement();
+            xtwWriter.WriteStartElement("Footer");
+            xtwWriter.WriteAttributeString("x", "Margin", null, "0.4921259845");
+            xtwWriter.WriteEndElement();
+            xtwWriter.WriteStartElement("PageMargins");
+            xtwWriter.WriteAttributeString("x", "Bottom", null, "0.984251969");
+            xtwWriter.WriteAttributeString("x", "Left", null, "0.78740157499999996");
+            xtwWriter.WriteAttributeString("x", "Right", null, "0.78740157499999996");
+            xtwWriter.WriteAttributeString("x", "Top", null, "0.984251969");
+            xtwWriter.WriteEndElement();
+            xtwWriter.WriteEndElement();
+            // <Selected/>
+            xtwWriter.WriteElementString("Selected", null);
+            // <Panes>
+            xtwWriter.WriteStartElement("Panes");
+            // <Pane>
+            xtwWriter.WriteStartElement("Pane");
+            // Write settings of active field
+            xtwWriter.WriteElementString("Number", "1");
+            xtwWriter.WriteElementString("ActiveRow", "1");
+            xtwWriter.WriteElementString("ActiveCol", "1");
+            // </Pane>
+            xtwWriter.WriteEndElement();
+            // </Panes>
+            xtwWriter.WriteEndElement();
+            // <ProtectObjects>False</ProtectObjects>
+            xtwWriter.WriteElementString("ProtectObjects", "False");
+            // <ProtectScenarios>False</ProtectScenarios>
+            xtwWriter.WriteElementString("ProtectScenarios", "False");
+            // </WorksheetOptions>
+            xtwWriter.WriteEndElement();
+            // </Worksheet>
+            xtwWriter.WriteEndElement();
+            // </Workbook>
+            xtwWriter.WriteEndElement();
+
+            // Write file on hard disk
+            xtwWriter.Flush();
+            xtwWriter.Close();
         }
         private void btnSearch_Click(object sender, EventArgs e)
         {
@@ -1062,6 +1521,7 @@ namespace Pidilite
         #region [Form Create]
         private void btnCreate_Click(object sender, EventArgs e)
         {
+            isGrid = false;
             var btn = (Button)sender;
             btnCreate = new Button();
             btnCreate = btn;
@@ -1075,7 +1535,6 @@ namespace Pidilite
 
             opFormCreate(iModule, oParentPnl);
         }
-
         private void opFormCreate(long iModule, Panel oParentPnl)
         {
             dtSave = new DataTable();
@@ -1111,10 +1570,11 @@ namespace Pidilite
             List<formDetails> fieldDetails = new List<formDetails>();
             table = oModuleValues.TableName;
             primaryKey = oModuleValues.PrimaryKey;
+            transType = oModuleValues.TransType;
 
             foreach (var obj in jForm)
             {
-                fieldDetails = obj["fields"].ToObject<List<formDetails>>().OrderBy(x => x.sortlist).ToList();
+                 fieldDetails = obj["fields"].ToObject<List<formDetails>>().OrderBy(x => x.sortlist).ToList();
                 FlowLayoutPanel ofpnl = new FlowLayoutPanel();
                 if (Convert.ToString(obj["column"]) == "2")
                 {
@@ -1150,7 +1610,7 @@ namespace Pidilite
                 Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
                 btnSave.Image = Properties.Resources.icon_Check;
             }
-            btnSave.TextAlign = ContentAlignment.MiddleCenter;
+            btnSave.TextAlign = ContentAlignment.MiddleCenter;  
             btnSave.ImageAlign = ContentAlignment.TopCenter;
             btnSave.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnSave.BackColor = SystemColors.HotTrack;
@@ -1183,6 +1643,34 @@ namespace Pidilite
             btnClose.FlatStyle = FlatStyle.Flat;
             btnClose.Height = 30;
             ofnlCreate.Controls.Add(btnClose);
+
+            if (transType > 0)
+            {
+                Button btnprint = new Button();
+                btnprint.UseMnemonic = false;
+                btnprint.Text = " Save & Print";
+                btnprint.Click += new EventHandler(btnprint_Click);
+                btnprint.Font = RegistryConfig.myFontBold;
+                btnprint.AutoSize = true;
+                btnprint.Height = 30;
+                try
+                {
+                    btnprint.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Print)
+                    { ForeColor = Color.White, Size = 17 });
+                }
+                catch (Exception ex)
+                {
+                    Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                    btnClose.Image = Properties.Resources.icon_Print;
+                }
+                btnprint.TextAlign = ContentAlignment.MiddleCenter;
+                btnprint.ImageAlign = ContentAlignment.MiddleCenter;
+                btnprint.TextImageRelation = TextImageRelation.ImageBeforeText;
+                btnprint.BackColor = SystemColors.HotTrack;
+                btnprint.ForeColor = Color.White;
+                btnprint.FlatStyle = FlatStyle.Flat;
+                ofnlCreate.Controls.Add(btnprint);
+            }
             Button btnBack = new Button();
             btnBack.UseMnemonic = false;
             btnBack.Text = " Back";
@@ -1210,53 +1698,67 @@ namespace Pidilite
             oPnlCreate.Controls.Add(ofnlCreate);
             oParentPnl.Controls.Add(oPnlCreate);
         }
-
         private void btnSave_Click(object sender, EventArgs e)
         {
+            isReportModule = false;
+            cmbOrg.Enabled = true;
+            count = 0;
             Panel oParentPnl = new Panel();
             opSaveForm(sender);
             oParentPnl = (Panel)flPnlData;
             oParentPnl.Controls.Clear();
             opFormCreate(iModuleId, oParentPnl);
         }
-
         private void btnBack_Click(object sender, EventArgs e)
         {
+            cmbOrg.Enabled = true;
+            isReportModule = false;
+            count = 0;
             opReConstructingGrid();
         }
-
         private void btnClose_Click(object sender, EventArgs e)
         {
+            isReportModule = false;
+            cmbOrg.Enabled = true;
+            count = 0;
             opSaveForm(sender);
-            opReConstructingGrid(); 
+            opReConstructingGrid();
         }
-
         private void opReConstructingGrid()
         {
             flPnlData.Controls.Clear();
             moduleValues oValues = new moduleValues();
             oValues = opGetModuleDetailsByID(Convert.ToInt16(iModuleId), false);
+           
             lblBreadCrumb.Text = oValues.Title;
             lblBreadCrumb.Font = RegistryConfig.myBCFont;
             lblBreadCrumb.ForeColor = SystemColors.ControlDarkDark;
-
+            if (oValues.ModuleType.ToLower() == "report")
+                isReportModule = true;
             Panel oPanel = new Panel();
             oPanel.Width = pnlBreadCrumb.Width - 40;
-            oPanel.Height = pnlBreadCrumb.Height + 20;
+            oPanel.Height = pnlBreadCrumb.Height - 10;
             oPanel.Anchor = (AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right);
             flPnlData.Controls.Add(oPanel);
             oGirdDetails = new List<Pidilite.gridDetails>();
             oGirdDetails = opCreatingSearchPanel(oValues, oPanel);
             opCreatingActionPanel(iModuleId, oPanel);
-            opConstructingGrid(oValues, oPanel, oGirdDetails);
+            opConstructingGrid(oValues, oPanel.Width, oGirdDetails);
         }
-
         private void opSaveForm(object sender)
         {
             errorProvider1.Clear();
             bool isFilled = true;
             //  isFilled = opRequiredFieldValidation();
-
+            if (dtSave.Select().ToList().Exists(row => row["Field"].ToString() == "org_id"))
+            {
+                DataRow[] foundRows = dtSave.Select().ToList().Where(row => row["Field"].ToString() == "org_id").ToArray();
+                if (foundRows.Length > 0)
+                {
+                    Control[] ctrlOrg = this.Controls.Find("cmbOrg", true);
+                    foundRows[0]["Value"] = (ctrlOrg[0] as ComboBox ).SelectedValue ;
+                }
+            }
             if (isFilled == true)
             {
                 var btn = (Button)sender;
@@ -1275,7 +1777,8 @@ namespace Pidilite
                             cmd.CommandType = CommandType.StoredProcedure;
                             cmd.CommandTimeout = con.ConnectionTimeout;// Setting command timeout for sqlcommand.
                             cmd.Parameters.AddWithValue("@ID", iFormId);
-                            cmd.Parameters.AddWithValue("@UserID", 1);
+                            cmd.Parameters.AddWithValue("@UserID", RegistryConfig.userId);
+                            cmd.Parameters.AddWithValue("@transType", transType );
                             cmd.Parameters.AddWithValue("@PrimaryKey", primaryKey);
                             cmd.Parameters.AddWithValue("@UDTT", dtSave);
                             cmd.Parameters.AddWithValue("@tableName", table);
@@ -1384,7 +1887,7 @@ namespace Pidilite
                         cmd.Parameters.AddWithValue("@MainFormID", masterFormId);
                         cmd.Parameters.AddWithValue("@MainTable", table);
                         cmd.Parameters.AddWithValue("@MainTablePK", mainTablePK);
-                        cmd.Parameters.AddWithValue("@UserID", 1);
+                        cmd.Parameters.AddWithValue("@UserID", RegistryConfig.userId);
                         cmd.Parameters.AddWithValue("@UDTT", dt);
                         cmd.Parameters.AddWithValue("@tableName", dt.TableName);
                         cmd.Parameters.AddWithValue("@PrimaryKey", tablePK);
@@ -1422,11 +1925,16 @@ namespace Pidilite
                         oValues = new moduleValues();
                         while (dr.Read())
                         {
-                            oValues.Title = Convert.ToString(dr[0]);
-                            oValues.Form = Convert.ToString(dr[1]);
-                            oValues.Grid = Convert.ToString(dr[2]);
-                            oValues.TableName = Convert.ToString(dr[3]);
-                            oValues.PrimaryKey = Convert.ToString(dr[4]);
+                            oValues.Title = Convert.ToString(dr["Title"]);
+                            oValues.Form = Convert.ToString(dr["Form"]);
+                            oValues.Grid = Convert.ToString(dr["Grid"]);
+                            oValues.TableName = Convert.ToString(dr["TableName"]);
+                            oValues.PrimaryKey = Convert.ToString(dr["PrimaryKey"]);
+                            oValues.whereCond = Convert.ToString(dr["whereCond"]);
+                            oValues.TransType  = Convert.ToInt32(dr["TransType"]);
+                            oValues.ModuleType  = Convert.ToString(dr["ModuleType"]);
+                            oValues.SQLSelect  = Convert.ToString(dr["SQLSelect"]);
+                            oValues.SQLGroup  = Convert.ToString(dr["SQLGroup"]);
                         }
                     }
                     dr.Close();
@@ -1473,6 +1981,7 @@ namespace Pidilite
             int r = 0, r2 = 0;
             foreach (var detail in fieldDetails)
             {
+               
 
                 if (detail.view == "1")
                 {
@@ -1495,7 +2004,7 @@ namespace Pidilite
                     }
                     else
                     {
-                        dr["Value"] = "";
+                        dr["Value"] = "NA-NUL" ;
                     }
                     dtSave.Rows.Add(dr);
                     if (detail.label != "")
@@ -1592,76 +2101,89 @@ namespace Pidilite
             switch (Convert.ToString(detail.type))
             {
                 case "autoNumber":
-                    ctrl = new TextBox();
-                    if (detail.wreadonly == true)
-                    {
-                        (ctrl as TextBox).ReadOnly = true;
-                        (ctrl as TextBox).TabStop = false;
-                    }
-                   (ctrl as TextBox).Font = RegistryConfig.myFont;
-                    JObject jAutoNo = detail.auto;
-                    int i = 0;
-                    DataTable dt = new DataTable();
-                    int totaldigit = 0, num;
+                   
                     string autoNumber = string.Empty;
-                    string[] dateArr = jAutoNo["autoDate"].ToObject<string[]>();
-                    if (dateArr.Length == 1)
+                    if (transType == 0)
                     {
-                        i = 0;
-                    }
-                    else if (dateArr.Length > 1)
-                    {
-                        for (int k = 0; k < dateArr.Length; k++)
+                        ctrl = new TextBox();
+                        if (detail.wreadonly == true)
                         {
-                            if (Convert.ToDateTime(dateArr[k]) < System.DateTime.Now)
-                            {
-                                i = k;
-                            }
-
+                            (ctrl as TextBox).ReadOnly = true;
+                            (ctrl as TextBox).TabStop = false;
                         }
-                    }
-                    if (dateArr.Length != 0)
-                    {
-
-                        string start = jAutoNo["autoFillzero"].ToObject<string[]>()[i];
-
-                        dt = getPreviousAutoNumber(table, detail.field);
-                        totaldigit = Convert.ToInt32(jAutoNo["autoDigits"].ToObject<string[]>()[i]);
-                        if (dt.Rows.Count == 0)
+                       (ctrl as TextBox).Font = RegistryConfig.myFont;
+                        JObject jAutoNo = detail.auto;
+                        if (detail.auto.Count != 0)
                         {
-
-
-                            if (jAutoNo["autoFillzero"].ToObject<string[]>()[i] == "1")
+                            int i = 0;
+                            DataTable dt = new DataTable();
+                            int totaldigit = 0, num;                           
+                            string[] dateArr = jAutoNo["autoDate"].ToObject<string[]>();
+                            if (dateArr.Length == 1)
                             {
-                                start = (Convert.ToInt32(start).ToString("D" + totaldigit.ToString()));
-
+                                i = 0;
                             }
-                            autoNumber = jAutoNo["autoPrex"].ToObject<string[]>()[i] + start + jAutoNo["autoSufx"].ToObject<string[]>()[i];
-                        }
-                        else
-                        {
-
-                            if (Convert.ToDateTime(dt.Rows[0]["CreatedDate"]) < Convert.ToDateTime(dateArr[i]))
+                            else if (dateArr.Length > 1)
                             {
-                                autoNumber = jAutoNo["autoPrex"].ToObject<string[]>()[i] + start + jAutoNo["autoSufx"].ToObject<string[]>()[i];
-                            }
-                            else
-                            {
-                                autoNumber = Convert.ToString(dt.Rows[0]["Id"]).Replace(jAutoNo["autoPrex"].ToObject<string[]>()[i], "");
-                                autoNumber = autoNumber.Replace(jAutoNo["autoSufx"].ToObject<string[]>()[i], "");
-                                if (int.TryParse(autoNumber, out num))
+                                for (int k = 0; k < dateArr.Length; k++)
                                 {
-                                    autoNumber = (Convert.ToInt32(autoNumber) + 1).ToString();
-                                    autoNumber = (Convert.ToInt32(autoNumber).ToString("D" + totaldigit.ToString()));
-                                    autoNumber = jAutoNo["autoPrex"].ToObject<string[]>()[i] + autoNumber + jAutoNo["autoSufx"].ToObject<string[]>()[i];
+                                    if (Convert.ToDateTime(dateArr[k]) < System.DateTime.Now)
+                                    {
+                                        i = k;
+                                    }
+                                }
+                            }
+                            if (dateArr.Length != 0)
+                            {
+                                string start = jAutoNo["autoFillzero"].ToObject<string[]>()[i];
+                                dt = getPreviousAutoNumber(table, detail.field);
+                                totaldigit = Convert.ToInt32(jAutoNo["autoDigits"].ToObject<string[]>()[i]);
+                                if (dt.Rows.Count == 0)
+                                {
+                                    if (jAutoNo["autoFillzero"].ToObject<string[]>()[i] == "1")
+                                    {
+                                        start = (Convert.ToInt32(start).ToString("D" + totaldigit.ToString()));
+                                    }
+                                    autoNumber = jAutoNo["autoPrex"].ToObject<string[]>()[i] + start + jAutoNo["autoSufx"].ToObject<string[]>()[i];
                                 }
                                 else
                                 {
-                                    autoNumber = jAutoNo["autoPrex"].ToObject<string[]>()[i] + start + jAutoNo["autoSufx"].ToObject<string[]>()[i];
+                                    if (Convert.ToDateTime(dt.Rows[0]["CreatedDate"]) < Convert.ToDateTime(dateArr[i]))
+                                    {
+                                        autoNumber = jAutoNo["autoPrex"].ToObject<string[]>()[i] + start + jAutoNo["autoSufx"].ToObject<string[]>()[i];
+                                    }
+                                    else
+                                    {
+                                        autoNumber = Convert.ToString(dt.Rows[0]["Id"]).Replace(jAutoNo["autoPrex"].ToObject<string[]>()[i], "");
+                                        if (jAutoNo["autoSufx"].ToObject<string[]>()[i] != "")
+                                            autoNumber = autoNumber.Replace(jAutoNo["autoSufx"].ToObject<string[]>()[i], "");
+                                        if (int.TryParse(autoNumber, out num))
+                                        {
+                                            autoNumber = (Convert.ToInt32(autoNumber) + 1).ToString();
+                                            autoNumber = (Convert.ToInt32(autoNumber).ToString("D" + totaldigit.ToString()));
+                                            autoNumber = jAutoNo["autoPrex"].ToObject<string[]>()[i] + autoNumber + jAutoNo["autoSufx"].ToObject<string[]>()[i];
+                                        }
+                                        else
+                                        {
+                                            autoNumber = jAutoNo["autoPrex"].ToObject<string[]>()[i] + start + jAutoNo["autoSufx"].ToObject<string[]>()[i];
+                                        }
+                                    }
                                 }
                             }
-
                         }
+                    }
+                    else
+                    {
+                        ctrl = new TextBox();
+                        if (detail.wreadonly == true)
+                        {
+                            (ctrl as TextBox).ReadOnly = true;
+                            (ctrl as TextBox).TabStop = false;
+                        }
+                       (ctrl as TextBox).Font = RegistryConfig.myFont;
+                        colName = detail.field;
+
+
                     }
                     break;
                 case "text":
@@ -1741,25 +2263,25 @@ namespace Pidilite
                         (ctrl as RichTextBox).ReadOnly = true;
                         (ctrl as RichTextBox).TabStop = false;
                     }
-
                     break;
                 case "select":
+                case "autoComplete_localstorage":
                     ctrl = new ComboBox();
+                    (ctrl as ComboBox ).AutoCompleteMode = AutoCompleteMode.SuggestAppend ;
+                    (ctrl as ComboBox).AutoCompleteSource = AutoCompleteSource.ListItems;                   
                     ctrl.Tag = lModuleId;
                     ctrl.Name = detail.field;
                     ctrl.Font = RegistryConfig.myFont;
                     string condition = String.Empty;
                     if (Convert.ToString(detail.option["opt_type"]) == "external")
                     {
-
-                        RegistryConfig.OrgId = 16;
                         condition = Convert.ToString(detail.option["lookup_dependency_key"]).Replace(':', '=');
                         condition = condition.Replace("{user_id}", Convert.ToString(RegistryConfig.userId));
                         condition = condition.Replace("{org_id}", Convert.ToString(RegistryConfig.OrgId));
                         TableDetails oDetails = new TableDetails();
                         oDetails.TableName = Convert.ToString(detail.option["lookup_table"]);
                         oDetails.Key = Convert.ToString(detail.option["lookup_key"]);
-                        oDetails.Value = Convert.ToString(detail.option["lookup_value"]);
+                        oDetails.Value = Convert.ToString(detail.option["lookup_value"]).Replace('|', ',');
                         oDetails.Condition = condition;
                         DataTable cbValues = new DataTable();
                         cbValues = comboBoxValues(oDetails);
@@ -1775,16 +2297,12 @@ namespace Pidilite
                             if (!(linkDic.ContainsKey(detail.field)))
                                 linkDic.Add(detail.field, detail.links);
                             (ctrl as ComboBox).SelectedIndexChanged += new EventHandler(ctrl_SelectedIndexChanged);
-                          
                         }
                         else
                         {
                             (ctrl as ComboBox).SelectedIndexChanged += new EventHandler(ctrl_SelectedIndexChanged);
-
                         }
-
                     }
-
                     else if (Convert.ToString(detail.option["opt_type"]) == "datalist")
                     {
                         string[] option = Convert.ToString(detail.option["lookup_query"]).Split('|');
@@ -1809,19 +2327,14 @@ namespace Pidilite
                         (ctrl as ComboBox).DataSource = cbValues;
                         if (detail.links != null && detail.links.ToString() != "{}")
                         {
-
                             linkDic.Add(detail.field, detail.links);
                             (ctrl as ComboBox).SelectedIndexChanged += new EventHandler(ctrl_SelectedIndexChanged);
-
                         }
-
                         else
                         {
                             (ctrl as ComboBox).SelectedIndexChanged += new EventHandler(ctrl_SelectedIndexChanged);
-
                         }
                     }
-
                     (ctrl as ComboBox).DropDownHeight = 100;
                     if (detail.wreadonly == true)
                     {
@@ -1838,7 +2351,6 @@ namespace Pidilite
                         (ctrl as RadioButton).Enabled = false;
                         (ctrl as RadioButton).TabStop = false;
                     }
-
                     break;
                 case "checkbox":
                     ctrl = new CheckBox();
@@ -1848,7 +2360,6 @@ namespace Pidilite
                         (ctrl as CheckBox).Enabled = false;
                         (ctrl as CheckBox).TabStop = false;
                     }
-
                     break;
                 case "file":
                     ctrl = new FlowLayoutPanel();
@@ -1875,7 +2386,6 @@ namespace Pidilite
                     ctrl.Controls.Add(txt);
                     ctrl.Controls.Add(upload);
                     ctrl.Name = detail.field;
-
                     break;
                 case "password":
                     ctrl = new TextBox();
@@ -1887,7 +2397,17 @@ namespace Pidilite
                         (ctrl as TextBox).ReadOnly = true;
                         (ctrl as TextBox).TabStop = false;
                     }
+                    break;
+                default:
 
+                    ctrl = new TextBox();
+                    ctrl.Name = detail.field;
+                    (ctrl as TextBox).Font = RegistryConfig.myFont;
+                    if (detail.wreadonly == true)
+                    {
+                        (ctrl as TextBox).ReadOnly = true;
+                        (ctrl as TextBox).TabStop = false;
+                    }
                     break;
             }
             if (detail.required == "required")
@@ -1975,44 +2495,53 @@ namespace Pidilite
                 {
                     equation = string.Join(",", val);
                     equation = equation.Replace(key.Name, key.Text);
-                    fields = Regex.Replace(Regex.Replace(equation, "[\\\\/]", "-"), @"[^a-zA-Z\.,_]", string.Empty);
-                    sFields = fields.Split(',');
-                    sFields = sFields.Where(s => s != "").ToArray();
-                    equation = equation.Replace(",", "");
-
-                    foreach (var ctrl in sFields)
+                   int  strCtr = Regex.Matches(equation, @"[a-zA-Z]").Count;
+                    if (strCtr > 0)
                     {
-                        Control[] fld = this.Controls.Find(ctrl.ToString(), true);
+                        fields = Regex.Replace(Regex.Replace(equation, "[\\\\/]", "-"), @"[^a-zA-Z\,_]", string.Empty);
+                        sFields = fields.Split(',');
+                        sFields = sFields.Where(s => s != "").ToArray();
+                        equation = equation.Replace(",", "");
 
-                        if (fld != null && fld.Length > 0)
+
+                        foreach (var ctrl in sFields)
                         {
-                            if (key.Parent != null && key.Parent.GetType().Name.ToLower() == "tablelayoutpanel" && ((TableLayoutPanel)key.Parent).ColumnCount > 2)
-                            {
-                                var tbpnl = ((TableLayoutPanel)key.Parent);
-                                int i = 0;
-                                foreach (var item in fld)
-                                {
-                                    if (tbpnl.GetCellPosition(item).Row == rowIndex)
-                                    {
-                                        getVal = i;
-                                    }
-                                    i++;
-                                }
-                                if ((fld[getVal] as TextBox).Text == "")
-                                    fValue = "0";
-                                else
-                                    fValue = (fld[getVal] as TextBox).Text;
+                            Control[] fld = this.Controls.Find(ctrl.ToString(), true);
 
+                            if (fld != null && fld.Length > 0)
+                            {
+                                if (key.Parent != null && key.Parent.GetType().Name.ToLower() == "tablelayoutpanel" && ((TableLayoutPanel)key.Parent).ColumnCount > 2)
+                                {
+                                    var tbpnl = ((TableLayoutPanel)key.Parent);
+                                    int i = 0;
+                                    foreach (var item in fld)
+                                    {
+                                        if (tbpnl.GetCellPosition(item).Row == rowIndex)
+                                        {
+                                            getVal = i;
+                                        }
+                                        i++;
+                                    }
+                                    if ((fld[getVal] as TextBox).Text == "")
+                                        fValue = "0";
+                                    else
+                                        fValue = (fld[getVal] as TextBox).Text;
+
+                                }
+                                else
+                                {
+                                    if ((fld[0] as TextBox).Text == "")
+                                        fValue = "0";
+                                    else
+                                        fValue = (fld[0] as TextBox).Text;
+                                }
+
+                                equation = equation.Replace(ctrl.ToString(), fValue);
                             }
                             else
                             {
-                                if ((fld[0] as TextBox).Text == "")
-                                    fValue = "0";
-                                else
-                                    fValue = (fld[0] as TextBox).Text;
+                                equation = equation.Replace(ctrl.ToString(), "0");
                             }
-
-                            equation = equation.Replace(ctrl.ToString(), fValue);
                         }
                     }
                     string[] eqn = equation.Split(')');
@@ -2045,10 +2574,7 @@ namespace Pidilite
                             }
                         }
                         else
-                        {
-
-
-                            val1 = value + val1;
+                        {   val1 = value + val1;
                             val1 = val1.Replace(",", "");
                             var objValue2 = dtCalc.Compute(val1, "");
                             val1 = objValue2.ToString();
@@ -2504,94 +3030,106 @@ namespace Pidilite
         {
             var ctrl = (ComboBox)sender;
             ctrl.SelectionLength = 0;
-             JObject jobj = null;
+            JObject jobj = null;
             string str = string.Empty, moreFields = string.Empty, stateFrom = string.Empty, stateTo = string.Empty;
             DataTable dt = new DataTable();
             int c = 0;
-            if (linkDic.ContainsKey(ctrl.Name))
-            {
-                jobj = linkDic.Single(x => x.Key == ctrl.Name).Value;
-                c = jobj["ofield"].ToArray().Length;
-            }
-            double num = 0;
-            bool isMulti = false;
-            if (dtSave.Select().ToList().Exists(row => row["Field"].ToString() == ctrl.Name))
-            {
-                DataRow[] foundRows = dtSave.Select().ToList().Where(row => row["Field"].ToString() == ctrl.Name).ToArray();
-                if (foundRows.Length > 0 && (ctrl as ComboBox).SelectedValue != null && Convert.ToInt16((ctrl as ComboBox).SelectedValue) != -1)
-                    foundRows[0]["Value"] = (ctrl as ComboBox).SelectedValue;
-            }
-            if (ctrl.Parent.GetType().Name.ToLower() == "tablelayoutpanel" && ((TableLayoutPanel)ctrl.Parent).ColumnCount > 2)
-            {
-                var tbpnl = (TableLayoutPanel)ctrl.Parent;
-                int rowIndex = tbpnl.GetCellPosition(ctrl).Row;
 
-                if (dtSubGrid.Tables[tbpnl.Name].Select().ToList().Exists(row => row["Field"].ToString() == ctrl.Name && Convert.ToInt32(row["Index"]) == rowIndex))
+            if (ctrl.Name == "nxt_warehouse" && transType > 0)
+            {
+                DataTable dtAuto = new DataTable();
+                warehouse = Convert.ToInt32(ctrl.SelectedIndex);              
+                dtAuto = getPreviousAutoNumber(table, colName);
+              if (  dtAuto.Rows[0][0].ToString()!= null && dtAuto.Rows[0][0].ToString() !="")
+                customAutonumber = dtAuto.Rows[0][0].ToString();
+
+            }
+            else
+            { 
+                if (linkDic.ContainsKey(ctrl.Name))
                 {
-                    DataRow[] foundRows = dtSubGrid.Tables[tbpnl.Name].Select().ToList().Where(row => row["Field"].ToString() == ctrl.Name && Convert.ToInt32(row["Index"]) == rowIndex).ToArray();
+                    jobj = linkDic.Single(x => x.Key == ctrl.Name).Value;
+                    c = jobj["ofield"].ToArray().Length;
+                }
+                double num = 0;
+                bool isMulti = false;
+                if (dtSave.Select().ToList().Exists(row => row["Field"].ToString() == ctrl.Name))
+                {
+                    DataRow[] foundRows = dtSave.Select().ToList().Where(row => row["Field"].ToString() == ctrl.Name).ToArray();
                     if (foundRows.Length > 0 && (ctrl as ComboBox).SelectedValue != null && Convert.ToInt16((ctrl as ComboBox).SelectedValue) != -1)
                         foundRows[0]["Value"] = (ctrl as ComboBox).SelectedValue;
                 }
-                for (int t = 0; t <= c - 1; t++)
+                if (ctrl.Parent.GetType().Name.ToLower() == "tablelayoutpanel" && ((TableLayoutPanel)ctrl.Parent).ColumnCount > 2)
                 {
-                    Control[] tbctrl = tbpnl.Controls.Find(jobj["ofield"][t].ToString(), true);
-                    //  Control[] tbxs = { tbctrl[rowIndex - 1] };
-                    for (int v = 0; v < tbctrl.Length; v++)
-                    {
+                    var tbpnl = (TableLayoutPanel)ctrl.Parent;
+                    int rowIndex = tbpnl.GetCellPosition(ctrl).Row;
 
-                        if (tbctrl != null && tbctrl.Length > 0 && Convert.ToString(jobj["ftable"][t]) != "")
+                    if (dtSubGrid.Tables[tbpnl.Name].Select().ToList().Exists(row => row["Field"].ToString() == ctrl.Name && Convert.ToInt32(row["Index"]) == rowIndex))
+                    {
+                        DataRow[] foundRows = dtSubGrid.Tables[tbpnl.Name].Select().ToList().Where(row => row["Field"].ToString() == ctrl.Name && Convert.ToInt32(row["Index"]) == rowIndex).ToArray();
+                        if (foundRows.Length > 0 && (ctrl as ComboBox).SelectedValue != null && Convert.ToInt16((ctrl as ComboBox).SelectedValue) != -1)
+                            foundRows[0]["Value"] = (ctrl as ComboBox).SelectedValue;
+                    }
+                    for (int t = 0; t <= c - 1; t++)
+                    {
+                        Control[] tbctrl = tbpnl.Controls.Find(jobj["ofield"][t].ToString(), true);
+                        for (int v = 0; v < tbctrl.Length; v++)
                         {
-                            qryFormation(ctrl, out str, ref moreFields, jobj, num, ref isMulti, t);
-                            if (str != "")
+
+                            if (tbctrl != null && tbctrl.Length > 0 && Convert.ToString(jobj["ftable"][t]) != "")
                             {
+                                qryFormation(ctrl, out str, ref moreFields, jobj, num, ref isMulti, t);
+                                if (str != "")
+                                {
+                                    dt = comboBoxValuesforLinks(str);
+                                    Control[] loopCtrl = { tbctrl[v] };
+                                    linkCtrlValues(ref stateFrom, ref stateTo, dt, isMulti, loopCtrl);
+                                }
+                                dt = new DataTable();
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (int t = 0; t <= c - 1; t++)
+                    {
+                        Control[] tbxs = this.Controls.Find(jobj["ofield"][t].ToString(), true);
+                        for (int v = 0; v < tbxs.Length; v++)
+                        {
+
+                            if (tbxs != null && tbxs.Length > 0 && Convert.ToString(jobj["ftable"][t]) != "")
+                            {
+                                qryFormation(ctrl, out str, ref moreFields, jobj, num, ref isMulti, t);
+                                if (!subGridLink.ContainsKey(tbxs[v].Name))
+                                {
+                                    subGridLink.Add(tbxs[v].Name, str);
+                                }
                                 dt = comboBoxValuesforLinks(str);
-                                Control[] loopCtrl = { tbctrl[v] };
+                                Control[] loopCtrl = { tbxs[v] };
                                 linkCtrlValues(ref stateFrom, ref stateTo, dt, isMulti, loopCtrl);
                             }
-                            dt = new DataTable();
                         }
                     }
                 }
-            }
-            else
-            {
                 for (int t = 0; t <= c - 1; t++)
                 {
-                    Control[] tbxs = this.Controls.Find(jobj["ofield"][t].ToString(), true);
-                    for (int v = 0; v < tbxs.Length; v++)
-                    {
 
-                        if (tbxs != null && tbxs.Length > 0 && Convert.ToString(jobj["ftable"][t]) != "")
-                        {
-                            qryFormation(ctrl, out str, ref moreFields, jobj, num, ref isMulti, t);
-                            if (!subGridLink.ContainsKey(tbxs[v].Name))
-                            {
-                                subGridLink.Add(tbxs[v].Name, str);
-                            }
-                            dt = comboBoxValuesforLinks(str);
-                            Control[] loopCtrl = { tbxs[v] };
-                            linkCtrlValues(ref stateFrom, ref stateTo, dt, isMulti, loopCtrl);
-                        }
-                    }
-                }
-            }
-            for (int t = 0; t <= c - 1; t++)
-            {
-
-                if (jobj["trigerfield"] != null && jobj["triggerfield"][t].ToString() != "")
-                {
-                    Control[] tbxs = this.Controls.Find(jobj["triggerfield"][t].ToString(), true);
-                    for (int v = 0; v < tbxs.Length; v++)
+                    if (jobj["trigerfield"] != null && jobj["triggerfield"][t].ToString() != "")
                     {
-                        if (tbxs != null && tbxs.Length > 0)
+                        Control[] tbxs = this.Controls.Find(jobj["triggerfield"][t].ToString(), true);
+                        for (int v = 0; v < tbxs.Length; v++)
                         {
-                            if (tbxs[v].GetType().Name == "ComboBox")
+                            if (tbxs != null && tbxs.Length > 0)
                             {
-                                int iSelectedItem = Convert.ToInt32((tbxs[v] as ComboBox).SelectedIndex);
-                                (tbxs[v] as ComboBox).SelectedIndex = 0;
-                                (tbxs[v] as ComboBox).SelectedIndex = iSelectedItem;
-                                ctrl_SelectedIndexChanged((tbxs[v] as ComboBox), EventArgs.Empty);
-                                (tbxs[v] as ComboBox).SelectionLength = 0;
+                                if (tbxs[v].GetType().Name == "ComboBox")
+                                {
+                                    int iSelectedItem = Convert.ToInt32((tbxs[v] as ComboBox).SelectedIndex);
+                                    (tbxs[v] as ComboBox).SelectedIndex = 0;
+                                    (tbxs[v] as ComboBox).SelectedIndex = iSelectedItem;
+                                    ctrl_SelectedIndexChanged((tbxs[v] as ComboBox), EventArgs.Empty);
+                                    (tbxs[v] as ComboBox).SelectionLength = 0;
+                                }
                             }
                         }
                     }
@@ -2755,7 +3293,7 @@ namespace Pidilite
                 else
                 {
                     (tbxs[0] as DateTimePicker).Text = "";
-                   
+
                 }
             }
 
@@ -2770,7 +3308,7 @@ namespace Pidilite
                         DataRow[] foundRows = dtSubGrid.Tables[tbpnl.Name].Select().ToList().Where(row => row["Field"].ToString() == tbxs[0].Name && Convert.ToInt32(row["Index"]) == rowIndex).ToArray();
                         if (foundRows.Length > 0 && (tbxs[0] as ComboBox).SelectedValue != null && Convert.ToInt16((tbxs[0] as ComboBox).SelectedValue) != -1)
                             foundRows[0]["Value"] = (tbxs[0] as ComboBox).SelectedValue;
-                       
+
                     }
                 }
                 else
@@ -2868,6 +3406,8 @@ namespace Pidilite
                         SqlDataAdapter sqlda = new SqlDataAdapter();
                         cmd.Parameters.AddWithValue("@TableName", tableName);
                         cmd.Parameters.AddWithValue("@Column", colName);
+                        cmd.Parameters.AddWithValue("@TransTypeId", transType );
+                        cmd.Parameters.AddWithValue("@warehouse", warehouse);
                         sqlda = new SqlDataAdapter(cmd);
                         sqlda.Fill(dt);
 
@@ -2926,7 +3466,7 @@ namespace Pidilite
                         cmd.Parameters.AddWithValue("@TableName", oDetails.TableName);
                         cmd.Parameters.AddWithValue("@Key", oDetails.Key);
                         cmd.Parameters.AddWithValue("@Value", oDetails.Value);
-                        cmd.Parameters.AddWithValue("@Condition", oDetails.Condition);
+                        cmd.Parameters.AddWithValue("@Condition", oDetails.Condition.Replace ("|"," and "));
                         sqlda = new SqlDataAdapter(cmd);
                         sqlda.Fill(dt);
                     }
@@ -2943,7 +3483,7 @@ namespace Pidilite
         #endregion
 
         #region[Form Edit]
-        private void opEditForm(long moduleID, Panel oParentPnl)
+        private void opEditForm(long moduleID, Panel oParentPnl, bool isFormView = false)
         {
             dtSave = new DataTable();
             dtSubGrid = new DataSet();
@@ -2974,7 +3514,15 @@ namespace Pidilite
 
 
             subModuleIds = "";
-            Panel oPnl = (Panel)oParentPnl.Parent;
+            Panel oPnl = new Panel();
+            if (isFormView == false)
+            {
+                oPnl = (Panel)oParentPnl.Parent;
+            }
+            else
+            {
+                oPnl = oParentPnl;
+            }
             oPnl.Controls.Clear();
             oPnl.AutoScroll = true;
             moduleValues oModuleValues = new moduleValues();
@@ -3054,6 +3602,35 @@ namespace Pidilite
             btnClose.ForeColor = Color.White;
             btnClose.FlatStyle = FlatStyle.Flat;
             ofnlCreate.Controls.Add(btnClose);
+
+            if (transType > 0)
+            {
+                Button btnprint = new Button();
+                btnprint.UseMnemonic = false;
+                btnprint.Text = " Save & Print";
+                btnprint.Click += new EventHandler(btnprint_Click);
+                btnprint.Font = RegistryConfig.myFontBold;
+                btnprint.AutoSize = true;
+                btnprint.Height = 30;
+                try
+                {
+                    btnprint.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.Print )
+                    { ForeColor = Color.White, Size = 17 });
+                }
+                catch (Exception ex)
+                {
+                    Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                    btnClose.Image = Properties.Resources.icon_Print;
+                }
+                btnprint.TextAlign = ContentAlignment.MiddleCenter;
+                btnprint.ImageAlign = ContentAlignment.MiddleCenter;
+                btnprint.TextImageRelation = TextImageRelation.ImageBeforeText;
+                btnprint.BackColor = SystemColors.HotTrack;
+                btnprint.ForeColor = Color.White;
+                btnprint.FlatStyle = FlatStyle.Flat;
+                ofnlCreate.Controls.Add(btnprint);
+            }
+
             Button btnBack = new Button();
             btnBack.UseMnemonic = false;
             btnBack.Text = " Back";
@@ -3082,6 +3659,12 @@ namespace Pidilite
             oPnl.Controls.Add(oPnlEdit);
 
         }
+
+        private void btnprint_Click(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
         private void opSubDetailConstructingQry(moduleValues oValues, long modId, long id = 0)
         {
             iFormId = id;
@@ -3104,6 +3687,7 @@ namespace Pidilite
             columnBuild = columnBuild.TrimStart(',', ' ');
             columnBuild = columnBuild + " from " + Convert.ToString(oValues.TableName);
             columnBuild = columnBuild + " with(nolock) where " + link_Key + " = " + Convert.ToString(id);
+            gridQry = columnBuild;
             dt = opGridDataByModule(columnBuild);
             subDetailCount = dt.Rows.Count;
             TableLayoutPanel tblPnl = new TableLayoutPanel();
@@ -3143,7 +3727,7 @@ namespace Pidilite
         #endregion
 
         #region [Form View]
-        private void opViewForm(long moduleID, Panel oParentPnl)
+        private void opViewForm(long moduleID, Panel oParentPnl, long id)
         {
             subModuleIds = "";
             Panel oPnl = (Panel)oParentPnl.Parent;
@@ -3169,13 +3753,77 @@ namespace Pidilite
                     opFormFormationforView(oPnl, fieldDetails, obj, ofpnl, Convert.ToInt16(obj["moduleid"]));
                 }
             }
-            Panel pnlSpace = new Panel();
-            pnlSpace.Width = oPnl.Width - 40;
-            pnlSpace.Height = 40;
-            pnlSpace.BackColor = SystemColors.ButtonFace;
-            oPnl.Controls.Add(pnlSpace);
+
+            Panel oPnlEdit = new Panel();
+            oPnlEdit.BackColor = Color.White;
+            oPnlEdit.Width = oParentPnl.Width - 50;
+            oPnlEdit.Height = 100;
+            FlowLayoutPanel ofnlCreate = new FlowLayoutPanel();
+            ofnlCreate.Anchor = (AnchorStyles.Right | AnchorStyles.Top);
+            ofnlCreate.Location = new Point((oPnlEdit.Bounds.Width - 10) - ofnlCreate.Width, 0);
+            ofnlCreate.FlowDirection = FlowDirection.LeftToRight;
+            ofnlCreate.AutoSize = true;
+            Button btnEdit = new Button();
+            btnEdit.UseMnemonic = false;
+            btnEdit.Text = " Edit";
+            btnEdit.Click += new EventHandler(btnEdit_Click);
+            btnEdit.Font = RegistryConfig.myFontBold;
+            btnEdit.AutoSize = true;
+            try
+            {
+                btnEdit.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.PencilSquare)
+                { ForeColor = Color.White, Size = 17 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                btnEdit.Image = Properties.Resources.icon_Check;
+            }
+            btnEdit.TextAlign = ContentAlignment.MiddleCenter;
+            btnEdit.ImageAlign = ContentAlignment.TopCenter;
+            btnEdit.TextImageRelation = TextImageRelation.ImageBeforeText;
+            btnEdit.BackColor = SystemColors.HotTrack;
+            btnEdit.ForeColor = Color.White;
+            btnEdit.FlatStyle = FlatStyle.Flat;
+            btnEdit.Height = 30;
+            btnEdit.Tag = id;
+            ofnlCreate.Controls.Add(btnEdit);
+
+            Button btnBack = new Button();
+            btnBack.UseMnemonic = false;
+            btnBack.Text = " Back";
+            btnBack.Click += new EventHandler(btnBack_Click);
+            btnBack.Font = RegistryConfig.myFontBold;
+            btnBack.AutoSize = true;
+            btnBack.Height = 30;
+            try
+            {
+                btnBack.Image = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.ArrowCircleOLeft)
+                { ForeColor = Color.White, Size = 17 });
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
+                btnBack.Image = Properties.Resources.icon_ArrowCircle;
+            }
+            btnBack.TextAlign = ContentAlignment.MiddleCenter;
+            btnBack.ImageAlign = ContentAlignment.MiddleCenter;
+            btnBack.TextImageRelation = TextImageRelation.ImageBeforeText;
+            btnBack.BackColor = SystemColors.HotTrack;
+            btnBack.ForeColor = Color.White;
+            btnBack.FlatStyle = FlatStyle.Flat;
+            ofnlCreate.Controls.Add(btnBack);
+            oPnlEdit.Controls.Add(ofnlCreate);
+            oPnl.Controls.Add(oPnlEdit);
 
 
+        }
+        private void btnEdit_Click(object sender, EventArgs e)
+        {
+            var btnEdit = (Button)sender;
+            flPnlData.Controls.Clear();
+            opEditForm(iModuleId, flPnlData, true);
+            opEditFormCreation(Convert.ToInt64(btnEdit.Tag));
         }
         private void opFormFormationforView(Panel oParentPnl, List<formDetails> fieldDetails, JToken obj, FlowLayoutPanel ofpnl, Int16 moduleID = 0)
         {
@@ -3542,6 +4190,7 @@ namespace Pidilite
             }
             cmbSearch.SelectedText = "Sort";
             cmbSearch.DropDownHeight = 100;
+            cmbSearch.Name = "sortby";
             ComboBox cmbOrder = new ComboBox();
             cmbOrder.Width = 70;
             cmbOrder.Font = RegistryConfig.myFont;
@@ -3549,17 +4198,19 @@ namespace Pidilite
             cmbOrder.Items.Add("Desc");
             cmbOrder.Items.Add("Asc");
             cmbOrder.SelectedText = "Order";
+            cmbOrder.Name = "orderby";
             oPanel.Controls.Add(oPnlSearch);
             oPnlSearch.Controls.Add(cmbSearch);
             oPnlSearch.Controls.Add(cmbOrder);
             Button btnGo = new Button();
             btnGo.Width = 43;
-            btnGo.Height = 27;
+            btnGo.Height = 27;   
             btnGo.BackColor = Color.FromArgb(((byte)(3)), ((byte)(101)), ((byte)(192)));
             btnGo.ForeColor = Color.White;
             btnGo.Font = new Font("Calibri", 10.00F, System.Drawing.FontStyle.Bold);
             btnGo.Name = "btnGo";
             btnGo.Text = "Go";
+            btnGo.Click += new EventHandler(btnGo_Click);
             btnGo.FlatAppearance.BorderSize = 0;
             btnGo.FlatStyle = FlatStyle.Flat;
             oPnlSearch.Controls.Add(btnGo);
@@ -3590,6 +4241,32 @@ namespace Pidilite
             oPnlSearch.Controls.Add(btnReset);
             return girdDetails;
         }
+        private void btnGo_Click(object sender, EventArgs e)
+        {
+            int columnCnt = 0;
+            Button btnGo = (Button)sender;
+            Control[] ctrlOrder = btnGo.Parent.Controls.Find("orderby", true);
+            Control[] ctrlSort = btnGo.Parent.Controls.Find("sortby", true);
+            string strGo = "", strSort = "";
+            if (ctrlSort[0].Text != "Sort")
+            {
+                strGo = "order by " + "'" + ctrlSort[0].Text + "'";
+                if (ctrlOrder[0].Text == "Order")
+                    strSort = "asc";
+                else
+                    strSort = ctrlOrder[0].Text.ToString ().ToLower ();
+                strGo = strGo + "  " + strSort;
+                DataTable oDataSource = new DataTable();
+                oDataSource = opGridDataByModule(gridQry + " " + strGo);
+                Control[] ctrlGrid = this.Controls.Find("DataGrid", true);
+                DataGridView oDataGrid = new DataGridView();
+                oDataGrid = ((DataGridView)ctrlGrid[0]);
+                oDataGrid.Columns.Clear();
+                oDataGrid.DataSource = oDataSource;
+                columnCnt = opAddColumntoDataGrid(columnCnt, oDataGrid);
+            }
+
+        }
         private void btnModule_Click(object sender, EventArgs e)
         {
             frmServerDetails oServer = new frmServerDetails(RegistryConfig.database);
@@ -3608,7 +4285,6 @@ namespace Pidilite
             }
         }
         #endregion
-
         public Control[] GetAll(Control control)
         {
             var controls = control.Controls.Cast<Control>();
@@ -3649,6 +4325,11 @@ namespace Pidilite
         public string Grid { get; set; }
         public string TableName { get; set; }
         public string PrimaryKey { get; set; }
+        public string whereCond { get; set; }
+        public int TransType { get; set; }
+        public string ModuleType { get; set; }
+        public string SQLSelect { get; set; }
+        public string SQLGroup { get; set; }
     }
     public class gridDetails
     {
@@ -3657,13 +4338,9 @@ namespace Pidilite
         public JArray language { get; set; }
         public string label { get; set; }
         public bool view { get; set; }
-        public bool viewmobile { get; set; }
-        public bool detail { get; set; }
-        public bool highlight { get; set; }
         public bool sortable { get; set; }
         public bool search { get; set; }
         public bool download { get; set; }
-        public bool frozen { get; set; }
         public string limited { get; set; }
         public string width { get; set; }
         public string align { get; set; }
@@ -3736,6 +4413,12 @@ namespace Pidilite
         public string LinkPKId { get; set; }
         public string TableName { get; set; }
         public string TablePKId { get; set; }
+    }
+    public class orgDetails
+    {
+        public Int64 OrgId { get; set; }
+        public string OrgName { get; set; }
+        public string Defaultvalue { get; set; }
     }
     #endregion
 }

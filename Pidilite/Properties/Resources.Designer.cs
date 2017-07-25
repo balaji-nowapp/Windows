@@ -263,6 +263,16 @@ namespace Pidilite.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        public static System.Drawing.Bitmap icon_Organization {
+            get {
+                object obj = ResourceManager.GetObject("icon_Organization", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         public static System.Drawing.Bitmap icon_password {
             get {
                 object obj = ResourceManager.GetObject("icon_password", resourceCulture);
@@ -326,6 +336,16 @@ namespace Pidilite.Properties {
         public static System.Drawing.Bitmap icon_PlusCircle {
             get {
                 object obj = ResourceManager.GetObject("icon_PlusCircle", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        public static System.Drawing.Bitmap icon_Print {
+            get {
+                object obj = ResourceManager.GetObject("icon_Print", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

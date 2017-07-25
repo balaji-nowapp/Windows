@@ -36,7 +36,6 @@
             this.pnlMain = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
             this.panel3 = new System.Windows.Forms.Panel();
-            this.lblUserName = new System.Windows.Forms.Label();
             this.lblSignOut = new System.Windows.Forms.Label();
             this.pbAvatar = new Pidilite.CirclePictureBox();
             this.pbCornorLogo = new System.Windows.Forms.PictureBox();
@@ -59,6 +58,8 @@
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.pnlTextUser = new System.Windows.Forms.Panel();
             this.txtServer = new System.Windows.Forms.TextBox();
+            this.tpnlUserName = new System.Windows.Forms.TableLayoutPanel();
+            this.lblUserName = new System.Windows.Forms.Label();
             this.pnlMain.SuspendLayout();
             this.panel2.SuspendLayout();
             this.panel3.SuspendLayout();
@@ -76,6 +77,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.pbServer)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             this.pnlTextUser.SuspendLayout();
+            this.tpnlUserName.SuspendLayout();
             this.SuspendLayout();
             // 
             // pnlMain
@@ -101,23 +103,12 @@
             // 
             // panel3
             // 
-            this.panel3.Controls.Add(this.lblUserName);
+            this.panel3.Controls.Add(this.tpnlUserName);
             this.panel3.Controls.Add(this.lblSignOut);
             this.panel3.Location = new System.Drawing.Point(0, 70);
             this.panel3.Name = "panel3";
             this.panel3.Size = new System.Drawing.Size(427, 41);
             this.panel3.TabIndex = 0;
-            // 
-            // lblUserName
-            // 
-            this.lblUserName.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.lblUserName.Font = new System.Drawing.Font("Calibri", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblUserName.Location = new System.Drawing.Point(344, 9);
-            this.lblUserName.Name = "lblUserName";
-            this.lblUserName.Size = new System.Drawing.Size(51, 15);
-            this.lblUserName.TabIndex = 3;
-            this.lblUserName.Text = "lblUserName";
-            this.lblUserName.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // lblSignOut
             // 
@@ -364,8 +355,36 @@
             this.txtServer.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.txtServer.Click += new System.EventHandler(this.txtServer_Click);
             // 
+            // tpnlUserName
+            // 
+            this.tpnlUserName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.tpnlUserName.AutoSize = true;
+            this.tpnlUserName.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tpnlUserName.ColumnCount = 1;
+            this.tpnlUserName.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tpnlUserName.Controls.Add(this.lblUserName, 0, 0);
+            this.tpnlUserName.Location = new System.Drawing.Point(416, 6);
+            this.tpnlUserName.Name = "tpnlUserName";
+            this.tpnlUserName.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.tpnlUserName.RowCount = 1;
+            this.tpnlUserName.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tpnlUserName.Size = new System.Drawing.Size(6, 15);
+            this.tpnlUserName.TabIndex = 7;
+            // 
+            // lblUserName
+            // 
+            this.lblUserName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblUserName.AutoSize = true;
+            this.lblUserName.Font = new System.Drawing.Font("Calibri", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblUserName.Location = new System.Drawing.Point(3, 0);
+            this.lblUserName.Name = "lblUserName";
+            this.lblUserName.Size = new System.Drawing.Size(0, 15);
+            this.lblUserName.TabIndex = 6;
+            this.lblUserName.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
             // frmServerDetails
             // 
+            this.AcceptButton = this.btnCreate;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
@@ -397,6 +416,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
             this.pnlTextUser.ResumeLayout(false);
             this.pnlTextUser.PerformLayout();
+            this.tpnlUserName.ResumeLayout(false);
+            this.tpnlUserName.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -431,6 +452,7 @@
         private System.Windows.Forms.PictureBox pictureBox2;
         private System.Windows.Forms.Panel pnlTextUser;
         private System.Windows.Forms.TextBox txtServer;
+        private System.Windows.Forms.TableLayoutPanel tpnlUserName;
         public System.Windows.Forms.Label lblUserName;
     }
 }

@@ -54,7 +54,7 @@ namespace Pidilite
             }
             catch (Exception ex)
             {
-
+                Log.LogData("Error in Loading Open Sans Font: " + ex.Message + ex.StackTrace, Log.Status.Error);
             }
 
 
