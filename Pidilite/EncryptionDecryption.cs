@@ -2,7 +2,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Pidilite
+namespace Nxton
 {
     public static class EncryptionDecryption
     {

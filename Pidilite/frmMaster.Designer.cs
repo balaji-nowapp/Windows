@@ -1,7 +1,7 @@
 ﻿using System.Drawing;
 using System.Windows.Forms;
 
-namespace Pidilite
+namespace Nxton
 {
     partial class frmMaster
     {
@@ -55,7 +55,7 @@ namespace Pidilite
             this.pnlCentre = new System.Windows.Forms.Panel();
             this.tpnlUserName = new System.Windows.Forms.TableLayoutPanel();
             this.lblUserName = new System.Windows.Forms.Label();
-            this.pbAvatar = new Pidilite.CirclePictureBox();
+            this.pbAvatar = new Nxton.CirclePictureBox();
             this.errorProvider1 = new System.Windows.Forms.ErrorProvider(this.components);
             this.pnlMain.SuspendLayout();
             this.pnlHead.SuspendLayout();
@@ -107,7 +107,7 @@ namespace Pidilite
             // 
             // pbIcon
             // 
-            this.pbIcon.Image = global::Pidilite.Properties.Resources.favicon;
+            this.pbIcon.Image = global::Nxton.Properties.Resources.favicon;
             this.pbIcon.Location = new System.Drawing.Point(3, 5);
             this.pbIcon.Name = "pbIcon";
             this.pbIcon.Size = new System.Drawing.Size(24, 20);
@@ -118,7 +118,7 @@ namespace Pidilite
             // 
             this.lblMinimize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblMinimize.BackColor = System.Drawing.Color.LightSkyBlue;
-            this.lblMinimize.Image = global::Pidilite.Properties.Resources.icon_minimize;
+            this.lblMinimize.Image = global::Nxton.Properties.Resources.icon_minimize;
             this.lblMinimize.ImageAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.lblMinimize.Location = new System.Drawing.Point(1057, 1);
             this.lblMinimize.Name = "lblMinimize";
@@ -270,12 +270,12 @@ namespace Pidilite
             this.tbpnlOrg.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 91.41104F));
             this.tbpnlOrg.Controls.Add(this.cmbOrg, 0, 0);
             this.tbpnlOrg.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tbpnlOrg.Location = new System.Drawing.Point(845, -1);
+            this.tbpnlOrg.Location = new System.Drawing.Point(667, -1);
             this.tbpnlOrg.Margin = new System.Windows.Forms.Padding(0);
             this.tbpnlOrg.Name = "tbpnlOrg";
             this.tbpnlOrg.RowCount = 1;
             this.tbpnlOrg.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tbpnlOrg.Size = new System.Drawing.Size(246, 32);
+            this.tbpnlOrg.Size = new System.Drawing.Size(424, 32);
             this.tbpnlOrg.TabIndex = 7;
             // 
             // cmbOrg
@@ -288,7 +288,7 @@ namespace Pidilite
             this.cmbOrg.FormattingEnabled = true;
             this.cmbOrg.Location = new System.Drawing.Point(3, 3);
             this.cmbOrg.Name = "cmbOrg";
-            this.cmbOrg.Size = new System.Drawing.Size(240, 21);
+            this.cmbOrg.Size = new System.Drawing.Size(418, 21);
             this.cmbOrg.TabIndex = 0;
             this.cmbOrg.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.cmbOrg_DrawItem);
             // 
@@ -370,7 +370,7 @@ namespace Pidilite
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "frmMaster";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Pidilite";
+            this.Text = "Nxton";
             this.Load += new System.EventHandler(this.frmMaster_Load);
             this.pnlMain.ResumeLayout(false);
             this.pnlMain.PerformLayout();

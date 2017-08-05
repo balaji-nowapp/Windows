@@ -1,4 +1,4 @@
-﻿namespace Pidilite
+﻿namespace Nxton
 {
     partial class frmForgotPassword
     {
@@ -131,7 +131,7 @@
             // 
             // pictureBox3
             // 
-            this.pictureBox3.Image = global::Pidilite.Properties.Resources.icon_mail;
+            this.pictureBox3.Image = global::Nxton.Properties.Resources.icon_mail;
             this.pictureBox3.Location = new System.Drawing.Point(20, 13);
             this.pictureBox3.Name = "pictureBox3";
             this.pictureBox3.Size = new System.Drawing.Size(22, 20);

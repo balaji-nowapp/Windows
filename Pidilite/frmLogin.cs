@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Drawing;
 
-namespace Pidilite
+namespace Nxton
 {
     public partial class frmLogin : Form
     {
@@ -52,7 +52,7 @@ namespace Pidilite
             }
         }
         private void btnLogin_Click(object sender, EventArgs e)
-        {
+         {
             second = 0;
             if (txtUserName.Text.Trim() == "" || txtUserName.Text.Trim() == "Email or Mobile no." || txtPassword.Text.Trim() == "" || txtPassword.Text.Trim() == "Password")
             {
@@ -137,7 +137,7 @@ namespace Pidilite
         {
 
             this.Hide();
-            frmForgotPassword frmPwd = new Pidilite.frmForgotPassword();
+            frmForgotPassword frmPwd = new Nxton.frmForgotPassword();
             frmPwd.ShowDialog();
         }
         private void timerStatus_Tick(object sender, EventArgs e)
@@ -170,6 +170,7 @@ namespace Pidilite
             }
             try
             {
+                
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                 {
                     if (response.StatusCode == HttpStatusCode.OK)
@@ -184,7 +185,13 @@ namespace Pidilite
                             LastName = Convert.ToString(respJson["lastname"]);
                             DbName = Convert.ToString(respJson["dbName"]);
                             RegistryConfig.userId = Convert.ToInt64(respJson["id"]);
+                            frmServerDetails oServer = new frmServerDetails(DbName);
+                            oServer.frmReadPNG(Avatar);
+                            opUpdateUserPassword();
+                            Log.LogData("opUpdateUserPassword Completed", Log.Status.Debug);
                             isHide = true;
+                           
+
                         }
                         else
                         {
@@ -201,6 +208,36 @@ namespace Pidilite
                 status = ex.Message;
                 Log.LogData("Error in User Credential Validation: " + ex.Message + ex.StackTrace, Log.Status.Error);
                 isHide = false;
+            }
+        }
+        public void opUpdateUserPassword()
+        {
+            try
+            {
+                frmServerDetails oServerdetail = new frmServerDetails(DbName);
+                using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
+                {
+                    con.Open();
+                    var vEncryptedPassword = EncryptionDecryption.SHA1HashStringForUTF8String(RegistryConfig.Password);
+                    SqlCommand Cmd = new SqlCommand();
+                    Cmd.Connection = con;
+                    Cmd.CommandText = "usp_UpadteUserWPassword";
+                    Cmd.CommandType = CommandType.StoredProcedure;
+                    Cmd.Parameters.AddWithValue("@UserName", RegistryConfig.UserName);
+                    Cmd.Parameters.AddWithValue("@Password", Convert.ToString(vEncryptedPassword));
+                    if (oServerdetail.isAvailable == true)
+                        Cmd.Parameters.AddWithValue("@UserPhoto", frmServerDetails.ImageToByte(RegistryConfig.userImage));
+                    else
+                    {
+                        Cmd.Parameters.Add("@UserPhoto", SqlDbType.VarBinary, -1);
+                        Cmd.Parameters["@UserPhoto"].Value = DBNull.Value;
+                    }
+                    Cmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.LogData("Error in Updating User WPassword: " + ex.Message + ex.StackTrace, Log.Status.Error);
             }
         }
         private void frmLogin_Load(object sender, EventArgs e)
@@ -237,23 +274,23 @@ namespace Pidilite
                                 RegistryConfig.userId = Convert.ToInt64(vOpcode.Value);
                                 status = "";// Login Success 
                                 userDetails oDetails = new userDetails();
-                               oDetails =  opGetUserDetails(Convert.ToInt64(vOpcode.Value));
+                                oDetails = opGetUserDetails(Convert.ToInt64(vOpcode.Value));
                                 FirstName = oDetails.FirstName;
                                 LastName = oDetails.LastName;
-                                if (oDetails.Photo != null )
-                                userPhoto =RegistryConfig.ByteToImage( oDetails.Photo);
+                                if (oDetails.Photo != null)
+                                    userPhoto = RegistryConfig.ByteToImage(oDetails.Photo);
                                 else
                                     try
                                     {
                                         userPhoto = FontAwesome.Instance.GetImage(new FontAwesome.Properties(FontAwesome.Type.User)
-                            
-                                    { ForeColor = SystemColors.ButtonFace, Size = 150 });
-                                frmMaster oMaster = new frmMaster(FirstName+" "+LastName,userPhoto);
+
+                                        { ForeColor = SystemColors.ButtonFace, Size = 150 });
+                                        frmMaster oMaster = new frmMaster(FirstName + " " + LastName, userPhoto);
                                     }
                                     catch (Exception ex)
                                     {
                                         Log.LogData("Error in Loading Font Awesome Icon: " + ex.Message + ex.StackTrace, Log.Status.Error);
-                                        userPhoto = Properties.Resources.icon_profile ;
+                                        userPhoto = Properties.Resources.icon_profile;
                                     }
                                 isHide = true;
                             }
@@ -276,6 +313,7 @@ namespace Pidilite
                                 Log.LogData("No Wpassword saved for this user", Log.Status.Info); // First Time Login
                                 userCredentialValidation(UserID, Password);
                             }
+                           
                             timerStatus.Enabled = true;
                             timerStatus.Interval = 1000; // it will Tick in 1 seconds
                             timerStatus.Tick += new EventHandler(timerStatus_Tick);
@@ -293,7 +331,7 @@ namespace Pidilite
         }
         public userDetails opGetUserDetails (Int64 UserId)
         {
-           List<userDetails> oDetail = new List<Pidilite.userDetails>();
+           List<userDetails> oDetail = new List<Nxton.userDetails>();
             using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
             {
                 con.Open();

@@ -1,4 +1,4 @@
-﻿namespace Pidilite
+﻿namespace Nxton
 {
     partial class frmServerDetails
     {
@@ -37,7 +37,7 @@
             this.panel2 = new System.Windows.Forms.Panel();
             this.panel3 = new System.Windows.Forms.Panel();
             this.lblSignOut = new System.Windows.Forms.Label();
-            this.pbAvatar = new Pidilite.CirclePictureBox();
+            this.pbAvatar = new Nxton.CirclePictureBox();
             this.pbCornorLogo = new System.Windows.Forms.PictureBox();
             this.panel7 = new System.Windows.Forms.Panel();
             this.prgBar = new System.Windows.Forms.ProgressBar();
@@ -190,7 +190,7 @@
             this.btnCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnCancel.Font = new System.Drawing.Font("Calibri", 11.25F, System.Drawing.FontStyle.Bold);
             this.btnCancel.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.btnCancel.Image = global::Pidilite.Properties.Resources.icon_Cancel;
+            this.btnCancel.Image = global::Nxton.Properties.Resources.icon_Cancel;
             this.btnCancel.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnCancel.Location = new System.Drawing.Point(205, 221);
             this.btnCancel.Name = "btnCancel";
@@ -210,7 +210,7 @@
             this.btnCreate.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnCreate.Font = new System.Drawing.Font("Calibri", 11.25F, System.Drawing.FontStyle.Bold);
             this.btnCreate.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.btnCreate.Image = global::Pidilite.Properties.Resources.icon_create;
+            this.btnCreate.Image = global::Nxton.Properties.Resources.icon_create;
             this.btnCreate.ImageAlign = System.Drawing.ContentAlignment.TopLeft;
             this.btnCreate.Location = new System.Drawing.Point(97, 220);
             this.btnCreate.Name = "btnCreate";
@@ -257,7 +257,7 @@
             // 
             // pbPwd
             // 
-            this.pbPwd.Image = global::Pidilite.Properties.Resources.icon_password1;
+            this.pbPwd.Image = global::Nxton.Properties.Resources.icon_password1;
             this.pbPwd.Location = new System.Drawing.Point(21, 17);
             this.pbPwd.Name = "pbPwd";
             this.pbPwd.Size = new System.Drawing.Size(22, 23);
@@ -298,7 +298,7 @@
             // 
             // pbUserID
             // 
-            this.pbUserID.Image = global::Pidilite.Properties.Resources.icon_lock;
+            this.pbUserID.Image = global::Nxton.Properties.Resources.icon_lock;
             this.pbUserID.Location = new System.Drawing.Point(21, 17);
             this.pbUserID.Name = "pbUserID";
             this.pbUserID.Size = new System.Drawing.Size(22, 23);
@@ -318,7 +318,7 @@
             // 
             // pbServer
             // 
-            this.pbServer.Image = global::Pidilite.Properties.Resources.icon_Sever;
+            this.pbServer.Image = global::Nxton.Properties.Resources.icon_Sever;
             this.pbServer.Location = new System.Drawing.Point(21, 16);
             this.pbServer.Name = "pbServer";
             this.pbServer.Size = new System.Drawing.Size(22, 20);

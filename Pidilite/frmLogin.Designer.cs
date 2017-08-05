@@ -1,4 +1,4 @@
-﻿namespace Pidilite
+﻿namespace Nxton
 {
     partial class frmLogin
     {
@@ -137,7 +137,7 @@
             this.btnLogin.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnLogin.Font = new System.Drawing.Font("Calibri", 11.25F, System.Drawing.FontStyle.Bold);
             this.btnLogin.ForeColor = System.Drawing.Color.WhiteSmoke;
-            this.btnLogin.Image = global::Pidilite.Properties.Resources.Login;
+            this.btnLogin.Image = global::Nxton.Properties.Resources.Login;
             this.btnLogin.Location = new System.Drawing.Point(143, 143);
             this.btnLogin.Name = "btnLogin";
             this.btnLogin.Size = new System.Drawing.Size(113, 27);
@@ -183,7 +183,7 @@
             // 
             // pbPwd
             // 
-            this.pbPwd.Image = global::Pidilite.Properties.Resources.icon_password;
+            this.pbPwd.Image = global::Nxton.Properties.Resources.icon_password;
             this.pbPwd.Location = new System.Drawing.Point(21, 17);
             this.pbPwd.Name = "pbPwd";
             this.pbPwd.Size = new System.Drawing.Size(22, 23);
@@ -203,7 +203,7 @@
             // 
             // pbMail
             // 
-            this.pbMail.Image = global::Pidilite.Properties.Resources.icon_mail;
+            this.pbMail.Image = global::Nxton.Properties.Resources.icon_mail;
             this.pbMail.Location = new System.Drawing.Point(21, 16);
             this.pbMail.Name = "pbMail";
             this.pbMail.Size = new System.Drawing.Size(22, 20);

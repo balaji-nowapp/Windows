@@ -13,7 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Pidilite
+namespace Nxton
 {
 
 
@@ -59,7 +59,7 @@ namespace Pidilite
 
 
             }
-        public static string registryName = @"SOFTWARE\Pidilite\PidiliteConfig";
+        public static string registryName = @"SOFTWARE\NXTON\NxtonConfig";
         public static string serverName { get; set; }
         public static string serverUser { get; set; }
         public static string serverPwd { get; set; }

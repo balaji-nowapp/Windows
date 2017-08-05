@@ -1,5 +1,4 @@
-﻿using Microsoft.SqlServer.Management.Common;
-using Microsoft.SqlServer.Management.Smo;
+﻿
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -18,7 +17,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-namespace Pidilite
+namespace Nxton
 {
     public partial class frmServerDetails : Form
     {
@@ -45,6 +44,7 @@ namespace Pidilite
             InitializeComponent();
             newDatabase = dbName;
         }
+
         public frmServerDetails(string firstName, string lastName, string dbName)
         {
             InitializeComponent();
@@ -187,6 +187,7 @@ namespace Pidilite
                 prgBar.Value = 0;
                 j = 1;
                 prgBar.Hide();
+                this.Close();
 
             }
         }
@@ -263,7 +264,7 @@ namespace Pidilite
                     for (int i = 0; i < fields.Length; i++)
                     {
                         tableCreation = tableCreation + fields[i] + " ";
-                        if (type[i].ToLower() == "datetime")
+                        if (type[i].ToLower() == "datetime" || type[i].ToLower() == "date")
                         {
                             value.Add(fields[i]);
                         }
@@ -290,7 +291,11 @@ namespace Pidilite
                             type[i] = type[i].Replace("double", "float(24)");
                             tableCreation = tableCreation + type[i] + " ";
                         }
-
+                        else if (type[i].ToLower().StartsWith("varbinary"))
+                        {
+                            type[i] = "nvarchar(max)";
+                            tableCreation = tableCreation + type[i] + " ";
+                        }
                         else if (type[i].ToLower().StartsWith("float("))
                         {
                             type[i] = "float(24)";
@@ -323,7 +328,6 @@ namespace Pidilite
                                 tableCreation = tableCreation + " ";
                                 if (defaultValue[i] == "")
                                 {
-
                                     tableCreation = tableCreation + "default  ' ' ";
                                 }
                                 else
@@ -331,7 +335,6 @@ namespace Pidilite
                                     tableCreation = tableCreation + "default " + Convert.ToString(defaultValue[i]) + " ";
                                 }
                             }
-
                             else if (type[i].ToLower().StartsWith("int"))
                             {
                                 tableCreation = tableCreation + "default " + Convert.ToInt16(defaultValue[i]) + " ";
@@ -347,16 +350,27 @@ namespace Pidilite
                             {
                                 tableCreation = tableCreation + "default 0 ";
                             }
+                            else if (type[i].ToLower().StartsWith("float"))
+                            {
+                                tableCreation = tableCreation + "default 0 ";
+                            }
 
                         }
                         if (nullable[i].ToLower() == "yes")
                         {
                             tableCreation = tableCreation + "null";
                         }
-                        else
+                       
+                           else
                         {
-                            tableCreation = tableCreation + "not null";
-                        }
+                                if (type[i].Contains("varchar") && (key[i].Trim().ToLower() != "pri"))
+                                {
+                                    tableCreation = tableCreation + "null";
+                                }
+                                else
+                                    tableCreation = tableCreation + "not null";
+                            }
+                      
                         if (i != fields.Length - 1)
                             tableCreation = tableCreation + ", \n";
                     }
@@ -462,8 +476,6 @@ namespace Pidilite
                 DataTable dtUsers = new DataTable();
                 dtUsers = (DataTable)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(respJson), (typeof(DataTable)));
                 opBulkCopy(dtUsers, "tb_Users");
-                opUpdateUserPassword();
-                Log.LogData("opUpdateUserPassword Completed", Log.Status.Debug);
                 opSaveMenuDetails();
                 Log.LogData("opSaveMenuDetails Completed", Log.Status.Debug);
                 opSaveModuleDetails();
@@ -519,6 +531,10 @@ namespace Pidilite
                                             {
                                                 date = Convert.ToDateTime("1753-01-01 00:00:00");
                                             }
+                                            else if (val == "0000-00-00")
+                                            {
+                                                date = Convert.ToDateTime("1753-01-01");
+                                            }
                                             else
                                             {
                                                 date = Convert.ToDateTime(val);
@@ -564,35 +580,7 @@ namespace Pidilite
             }
         }
         #endregion
-        public void opUpdateUserPassword()
-        {
-            try
-            {
-                using (SqlConnection con = new SqlConnection(RegistryConfig.myConn))
-                {
-                    con.Open();
-                    var vEncryptedPassword = EncryptionDecryption.SHA1HashStringForUTF8String(RegistryConfig.Password);
-                    SqlCommand Cmd = new SqlCommand();
-                    Cmd.Connection = con;
-                    Cmd.CommandText = "usp_UpadteUserWPassword";
-                    Cmd.CommandType = CommandType.StoredProcedure;
-                    Cmd.Parameters.AddWithValue("@UserName", RegistryConfig.UserName);
-                    Cmd.Parameters.AddWithValue("@Password", Convert.ToString(vEncryptedPassword));
-                    if (isAvailable == true)
-                        Cmd.Parameters.AddWithValue("@UserPhoto", ImageToByte(RegistryConfig.userImage));
-                    else
-                    {
-                        Cmd.Parameters.Add("@UserPhoto", SqlDbType.VarBinary, -1);
-                        Cmd.Parameters["@UserPhoto"].Value = DBNull.Value;
-                    }
-                    Cmd.ExecuteNonQuery();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.LogData("Error in Updating User WPassword: " + ex.Message + ex.StackTrace, Log.Status.Error);
-            }
-        }
+
         public static byte[] ImageToByte(Image img)
         {
             ImageConverter converter = new ImageConverter();
@@ -613,7 +601,6 @@ namespace Pidilite
                         var theResponseStream = new StreamReader(response.GetResponseStream());
                         string result = theResponseStream.ReadToEnd();
                         respJson = JsonConvert.DeserializeObject<dynamic>(result);
-
 
                     }
 
@@ -760,9 +747,40 @@ namespace Pidilite
                 Log.LogData("Error in Getting Dashboard Menus: " + ex.Message + ex.StackTrace, Log.Status.Error);
             }
         }
+
+        private List<string> opGetTableName()
+        {
+            List<string> sTableName = new List<string>();
+            DataTable dt = new DataTable();
+            using (SqlConnection oCon = new SqlConnection(RegistryConfig.myConn))
+            {
+                oCon.Open();
+                using (SqlCommand oSqlCmd = oCon.CreateCommand())
+                {
+                    // dbo.ufn_GetOfferDeviationData  returns   a Datatable which contains the Offer Deviation datas
+                    // based on  ReqResID
+                    oSqlCmd.CommandText = "Select * from dbo.ufn_GetTableNamesofIdentityCol ()";
+                    oSqlCmd.CommandType = CommandType.Text;
+                    SqlDataAdapter oDataAdapter = new SqlDataAdapter(oSqlCmd);
+                    oSqlCmd.ExecuteNonQuery();
+                    oDataAdapter.Fill(dt);
+                    sTableName = dt.AsEnumerable()
+                           .Select(r => r.Field<string>("TableName"))
+                           .ToList();
+                }
+
+            }
+            return sTableName;
+        }
         private void opBulkCopy(DataTable formatDtble, string tableName)
         {
-            if (tableName != "tb_menu" || tableName != "tb_users" || tableName != "tb_module")
+            bool isExists = false;
+            List<string> sTable = opGetTableName();
+            if (sTable.Any(str => str.Contains(tableName)))
+            {
+                isExists = true;
+            }
+            if (tableName != "tb_menu" && tableName != "tb_users" && tableName != "tb_module")
             {
                 try
                 {
@@ -773,25 +791,27 @@ namespace Pidilite
                             con.Open();
                             // my DataTable column names match my SQL Column names, so I simply made this loop.
                             //However if your column names don't match, just pass in which datatable name matches the SQL column name in Column Mappings
-
-                            SqlCommand Cmd = new SqlCommand();
-                            Cmd.Connection = con;
-                            Cmd.CommandText = "SET IDENTITY_INSERT " + tableName + " ON";
-                            Cmd.ExecuteNonQuery();
-                            SqlCommand cmd = new SqlCommand();
-                            cmd.Connection = con;
+                            if (isExists)
+                            {
+                                SqlCommand Cmd = new SqlCommand();
+                                Cmd.Connection = con;
+                                Cmd.CommandText = "SET IDENTITY_INSERT " + tableName + " ON";
+                                Cmd.ExecuteNonQuery();
+                            }
                             foreach (DataColumn col in formatDtble.Columns)
                             {
                                 bulkCopy.ColumnMappings.Add(col.ColumnName, col.ColumnName);
                             }
-
                             bulkCopy.BulkCopyTimeout = 600;
                             bulkCopy.DestinationTableName = tableName;
                             bulkCopy.WriteToServer(formatDtble);
-                            cmd.CommandText = "SET IDENTITY_INSERT " + tableName + " OFF";
-                            cmd.ExecuteNonQuery();
-
-
+                            if (isExists)
+                            {
+                                SqlCommand cmd = new SqlCommand();
+                                cmd.Connection = con;
+                                cmd.CommandText = "SET IDENTITY_INSERT " + tableName + " OFF";
+                                cmd.ExecuteNonQuery();
+                            }
                         }
                     }
                 }

@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Pidilite
+namespace Nxton
 {
     public partial class frmForgotPassword : Form
     {
@@ -20,7 +20,7 @@ namespace Pidilite
         private void lblBack_Click(object sender, EventArgs e)
         {
             this.Hide();
-            frmLogin frmLgn = new Pidilite.frmLogin();
+            frmLogin frmLgn = new Nxton.frmLogin();
             frmLgn.ShowDialog();
         }
 
